@@ -33,9 +33,10 @@
             // 
             // LFrameRate
             // 
+            this.LFrameRate.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.LFrameRate.AutoSize = true;
             this.LFrameRate.ForeColor = System.Drawing.Color.Red;
-            this.LFrameRate.Location = new System.Drawing.Point(1228, 9);
+            this.LFrameRate.Location = new System.Drawing.Point(12, 9);
             this.LFrameRate.Name = "LFrameRate";
             this.LFrameRate.Size = new System.Drawing.Size(36, 25);
             this.LFrameRate.TabIndex = 0;
