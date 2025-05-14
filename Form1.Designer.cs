@@ -28,36 +28,20 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.LFrameRate = new System.Windows.Forms.Label();
             this.SuspendLayout();
-            // 
-            // LFrameRate
-            // 
-            this.LFrameRate.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.LFrameRate.AutoSize = true;
-            this.LFrameRate.ForeColor = System.Drawing.Color.Red;
-            this.LFrameRate.Location = new System.Drawing.Point(12, 9);
-            this.LFrameRate.Name = "LFrameRate";
-            this.LFrameRate.Size = new System.Drawing.Size(36, 25);
-            this.LFrameRate.TabIndex = 0;
-            this.LFrameRate.Text = "10";
-            this.LFrameRate.TextAlign = System.Drawing.ContentAlignment.TopRight;
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1276, 629);
-            this.Controls.Add(this.LFrameRate);
+            this.ClientSize = new System.Drawing.Size(1516, 961);
+            this.KeyPreview = true;
             this.Name = "Form1";
             this.Text = "Form1";
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
         #endregion
-
-        private System.Windows.Forms.Label LFrameRate;
     }
 }
