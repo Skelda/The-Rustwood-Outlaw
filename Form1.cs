@@ -9,7 +9,7 @@ using System.Windows.Forms;
 
 namespace The_Rustwood_Outlaw
 {
-    public partial class Form1 : Form
+    public partial class Board : Form
     {
 
         Timer gameTimer = new Timer();
@@ -18,18 +18,30 @@ namespace The_Rustwood_Outlaw
 
         List<Barricade> barricades = new List<Barricade>();
         List<Entity> entities = new List<Entity>();
+        public Entity player;
 
 
-        public Form1()
+        public int mapPixelSize;
+        public int offsetX;
+        public int offsetY;
+
+        public Board()
         {
             InitializeComponent();
 
             this.KeyDown += Form1_KeyDown;
             this.KeyUp += Form1_KeyUp;
 
+            int mapPixelSize = GameSettings.CellSize * GameSettings.MapSize;
+
+            offsetX = (ClientSize.Width - mapPixelSize) / 2;
+            offsetY = (ClientSize.Height - mapPixelSize) / 2;
+
             gameTimer.Interval = 1000 / GameSettings.RefreshRate;
             gameTimer.Tick += GameLoop;
             gameTimer.Start();
+
+
 
             LoadMap(this);
         }
@@ -39,11 +51,11 @@ namespace The_Rustwood_Outlaw
             float deltaTime = 1.0f / GameSettings.RefreshRate;
 
             foreach (var entity in entities)
-                entity.Update(deltaTime, barricades);
+                entity.Update(deltaTime);
         }
 
 
-        public void LoadMap(Form form)
+        public void LoadMap(Board board)
         {
             int MapSize = GameSettings.MapSize;
             string[] lines = File.ReadAllLines("levels.txt");
@@ -68,12 +80,7 @@ namespace The_Rustwood_Outlaw
 
             int cellSize = GameSettings.CellSize;
 
-            // Calculate total map pixel size
-            int mapPixelSize = cellSize * MapSize;
-
             // Center the map within the form
-            int offsetX = (form.ClientSize.Width - mapPixelSize) / 2;
-            int offsetY = (form.ClientSize.Height - mapPixelSize) / 2;
 
             for (int y = 0; y < MapSize; y++)
             {
@@ -86,7 +93,7 @@ namespace The_Rustwood_Outlaw
 
                     if (tile == 'x')
                     {
-                        var barricade = new Barricade(form, position, size);
+                        var barricade = new Barricade(board, new Point(x,y));
                         barricades.Add(barricade);
                     }
                     else if (tile == 'p')
@@ -97,12 +104,28 @@ namespace The_Rustwood_Outlaw
                             Size = size,
                             Location = position
                         };
-                        form.Controls.Add(sprite);
+                        board.Controls.Add(sprite);
 
-                        Entity player = new Player(GameSettings.PlayerSpeed, GameSettings.PlayerHealth,
-                                                   GameSettings.PlayerDamage, sprite, position, pressedKeys);
+                        player = new Player(GameSettings.PlayerSpeed, GameSettings.PlayerHealth,
+                                                   GameSettings.PlayerDamage, sprite, position, pressedKeys, this, barricades, entities);
                         entities.Add(player);
                     }
+
+                    else if (tile == 'e')
+                    {
+                        PictureBox sprite = new PictureBox
+                        {
+                            BackColor = Color.Brown, // You can set an image here too
+                            Size = size,
+                            Location = position
+                        };
+                        board.Controls.Add(sprite);
+
+                        Enemy enemy = new Enemy(GameSettings.EnemySpeed, GameSettings.EnemyHealth,
+                                                   GameSettings.EnemyDamage, sprite, position, this, barricades, entities);
+                        entities.Add(enemy);
+                    }
+
                 }
             }
         }

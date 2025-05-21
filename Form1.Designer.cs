@@ -1,6 +1,6 @@
 ﻿namespace The_Rustwood_Outlaw
 {
-    partial class Form1
+    partial class Board
     {
         /// <summary>
         /// Vyžaduje se proměnná návrháře.

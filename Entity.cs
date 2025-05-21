@@ -3,114 +3,102 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using The_Rustwood_Outlaw.Properties;
+using static The_Rustwood_Outlaw.Entity;
 
 namespace The_Rustwood_Outlaw
 {
-    class Entity
+    public class Entity
     {
-        public enum directions { STAY, UP, DOWN, LEFT, RIGHT, UPLEFT, UPRIGHT, DOWNLEFT, DOWNRIGHT };
         public int speed; // pixels per second
         public int health;
         public int damage;
         public PictureBox sprite;
         public Point position;
+        public Board board;
+        public List<Barricade> obstacles;
+        public List<Entity> entities;
 
-        public Entity(int speed, int health, int damage, PictureBox sprite, Point position)
+        public Entity(int speed, int health, int damage, PictureBox sprite, Point position, Board board, List<Barricade> obstacles, List<Entity> entities)
         {
             this.speed = speed;
             this.health = health;
             this.damage = damage;
             this.sprite = sprite;
             this.position = position;
+            this.board = board;
+            this.obstacles = obstacles;
+            this.entities = entities;
         }
 
-        public virtual void Update(float deltaTime, List<Barricade> obstacles) { }
-
-        public virtual void Draw(Graphics g) { }
-
-
-        public virtual void Move(float deltaTime, directions direction, List<Barricade> obstacles)
+        public virtual void Update(float deltaTime) 
         {
-            float moveAmount = speed * deltaTime;
-            float diagonalFactor = (float)GameSettings.diagonalMove;
+            Move(deltaTime);
+            Draw();
+        }
 
-            float dx = 0, dy = 0;
+        protected Point GetMaxPosition(int dx, int dy)
+        {
+            Point newPos = position;
 
-            switch (direction)
+            // Pohyb po ose X
+            if (dx != 0)
             {
-                case directions.UP: dy = -1; break;
-                case directions.DOWN: dy = 1; break;
-                case directions.LEFT: dx = -1; break;
-                case directions.RIGHT: dx = 1; break;
-                case directions.UPLEFT: dx = -1; dy = -1; break;
-                case directions.UPRIGHT: dx = 1; dy = -1; break;
-                case directions.DOWNLEFT: dx = -1; dy = 1; break;
-                case directions.DOWNRIGHT: dx = 1; dy = 1; break;
-                case directions.STAY: return;
+                int stepX = Math.Sign(dx);
+                for (int i = 1; i <= Math.Abs(dx); i++)
+                {
+                    Point testPos = new Point(newPos.X + stepX, newPos.Y);
+                    Rectangle testRect = new Rectangle(testPos, sprite.Size);
+                    bool collision = obstacles.Any(b => b.Bounds.IntersectsWith(testRect)) ||
+                                     entities.Any(e => (!object.ReferenceEquals(e, this) &&
+                                                         e.Bounds.IntersectsWith(testRect)));
+;
+                    if (collision)
+                        break;
+                    newPos.X += stepX;
+                }
             }
 
-            bool isDiagonal = dx != 0 && dy != 0;
-            float factor = isDiagonal ? diagonalFactor : 1.0f;
-            dx *= moveAmount * factor;
-            dy *= moveAmount * factor;
-
-            // Stepwise check: try X axis first, then Y
-            Point nextPosX = new Point(position.X + (int)dx, position.Y);
-            Rectangle boundsX = new Rectangle(nextPosX, sprite.Size);
-
-            bool xBlocked = obstacles.Any(b => b.Bounds.IntersectsWith(boundsX));
-            if (!xBlocked)
+            // Pohyb po ose Y
+            if (dy != 0)
             {
-                position.X += (int)dx;
-            }
-            else
-            {
-                // Slide up to the edge of the barricade
-                position.X = FindMaxXBeforeCollision(position, (int)dx, sprite.Size, obstacles);
+                int stepY = Math.Sign(dy);
+                for (int i = 1; i <= Math.Abs(dy); i++)
+                {
+                    Point testPos = new Point(newPos.X, newPos.Y + stepY);
+                    Rectangle testRect = new Rectangle(testPos, sprite.Size);
+                    bool collision = obstacles.Any(b => b.Bounds.IntersectsWith(testRect)) ||
+                                     entities.Any(e => (!object.ReferenceEquals(e, this) &&
+                                                         e.Bounds.IntersectsWith(testRect)));
+                    if (collision)
+                        break;
+                    newPos.Y += stepY;
+                }
             }
 
-            Point nextPosY = new Point(position.X, position.Y + (int)dy);
-            Rectangle boundsY = new Rectangle(nextPosY, sprite.Size);
+            return newPos;
+        }
 
-            bool yBlocked = obstacles.Any(b => b.Bounds.IntersectsWith(boundsY));
-            if (!yBlocked)
+        public virtual void Draw()
+        {
+            if (!board.Controls.Contains(sprite))
             {
-                position.Y += (int)dy;
+                board.Controls.Add(sprite);
+                sprite.BringToFront();
             }
-            else
-            {
-                position.Y = FindMaxYBeforeCollision(position, (int)dy, sprite.Size, obstacles);
-            }
-
             sprite.Location = position;
+            sprite.Visible = true;
         }
 
-        private int FindMaxXBeforeCollision(Point current, int dx, Size size, List<Barricade> obstacles)
+
+
+        public virtual void Move(float deltaTime)
         {
-            int step = Math.Sign(dx);
-            for (int i = 0; i != dx; i += step)
-            {
-                var testPos = new Point(current.X + i, current.Y);
-                var rect = new Rectangle(testPos, size);
-                if (obstacles.Any(b => b.Bounds.IntersectsWith(rect)))
-                    return current.X + i - step;
-            }
-            return current.X + dx;
+            
         }
 
-        private int FindMaxYBeforeCollision(Point current, int dy, Size size, List<Barricade> obstacles)
-        {
-            int step = Math.Sign(dy);
-            for (int i = 0; i != dy; i += step)
-            {
-                var testPos = new Point(current.X, current.Y + i);
-                var rect = new Rectangle(testPos, size);
-                if (obstacles.Any(b => b.Bounds.IntersectsWith(rect)))
-                    return current.Y + i - step;
-            }
-            return current.Y + dy;
-        }
 
+        public Rectangle Bounds => new Rectangle(position, sprite.Size);
 
     }
 
@@ -118,33 +106,186 @@ namespace The_Rustwood_Outlaw
     {
         private HashSet<Keys> pressedKeys;
 
-        public Player(int speed, int health, int damage, PictureBox sprite, Point position, HashSet<Keys> keys)
-            : base(speed, health, damage, sprite, position)
+        public Player(int speed, int health, int damage, PictureBox sprite, Point position, HashSet<Keys> keys, Board board, List<Barricade> obstacles, List<Entity> entities)
+            : base(speed, health, damage, sprite, position, board, obstacles, entities)
         {
             pressedKeys = keys;
         }
 
-        public override void Update(float deltaTime, List<Barricade> obstacles)
+        public override void Update(float deltaTime)
         {
-            directions dir = directions.STAY;
-
+            Move(deltaTime);
+            Draw();
+        }
+        public override void Move(float deltaTime) 
+        {
             bool up = pressedKeys.Contains(Keys.W);
             bool down = pressedKeys.Contains(Keys.S);
             bool left = pressedKeys.Contains(Keys.A);
             bool right = pressedKeys.Contains(Keys.D);
 
-            if (up && left) dir = directions.UPLEFT;
-            else if (up && right) dir = directions.UPRIGHT;
-            else if (down && left) dir = directions.DOWNLEFT;
-            else if (down && right) dir = directions.DOWNRIGHT;
-            else if (up) dir = directions.UP;
-            else if (down) dir = directions.DOWN;
-            else if (left) dir = directions.LEFT;
-            else if (right) dir = directions.RIGHT;
+            float moveAmount = speed * deltaTime;
+            float diagonalFactor = GameSettings.diagonalMove;
 
+            int dx = 0, dy = 0;
 
-            Move(deltaTime, dir, obstacles);
+            if (up) dy = -1;
+            else if (down) dy = 1;
+            if (left) dx = -1;
+            else if (right) dx = 1;
+
+            bool isDiagonal = dx != 0 && dy != 0;
+            float factor = isDiagonal ? diagonalFactor : 1.0f;
+            dx *= (int)(moveAmount * factor);
+            dy *= (int)(moveAmount * factor);
+
+            Point newPos = GetMaxPosition(dx, dy);
+            position = newPos;
         }
+        
+
     }
 
+
+    class Enemy : Entity
+    {
+        private List<PictureBox> pathBoxes = new List<PictureBox>();
+
+        public Enemy(int speed, int health, int damage, PictureBox sprite, Point position, Board board, List<Barricade> obstacles, List<Entity> entities)
+            : base(speed, health, damage, sprite, position, board, obstacles, entities)
+        {
+        }
+
+        private (int, int) PathFinding(Point goal)
+        {
+            Point gridStart = RoundPointToGrid(position);
+            Point gridGoal = RoundPointToGrid(goal);
+
+            if (gridGoal == gridStart) return (0 , 0);
+
+            int Boardsize = GameSettings.MapSize;
+
+            Point[] howToGetTo = new Point[Boardsize * Boardsize];
+            Queue<(Point, int)> fronta = new Queue<(Point, int)>();
+            fronta.Enqueue((gridStart, 0));
+            howToGetTo[gridStart.Y + Boardsize * (gridStart.X)] = gridStart;
+            while (fronta.Count != 0)
+            {
+                (Point, int) pos = fronta.Dequeue();
+                Point grid_position = pos.Item1;
+                int depth = pos.Item2;
+                if (grid_position == gridGoal)
+                {
+                    Point nextStep = new Point();
+                    foreach (var pb in pathBoxes)
+                    {
+                        if (board.Controls.Contains(pb))
+                            board.Controls.Remove(pb);
+                        pb.Dispose();
+                    }
+                    pathBoxes.Clear();
+                    while (howToGetTo[grid_position.Y  + Boardsize * (grid_position.X)] != gridStart)
+                    {
+                        grid_position = howToGetTo[grid_position.Y + Boardsize * (grid_position.X)];
+
+
+                        if (GameSettings.drawPathfinding)
+                        {
+                            PictureBox ss = new PictureBox
+                            {
+                                BackColor = Color.Yellow,
+                                Size = sprite.Size,
+                                Location = grid_position
+                            };
+
+                            if (!board.Controls.Contains(ss))
+                            {
+                                board.Controls.Add(ss);
+                                ss.BringToFront();
+                            }
+                            ss.Location = GridToCoords(grid_position);
+                            ss.Visible = true;
+                            pathBoxes.Add(ss);
+                        }
+                        
+                    }
+                    int dx = 0, dy = 0;
+                    Point normalPos = GridToCoords(grid_position);
+                    if (normalPos.X < this.position.X) dx = -1;
+                    else if (normalPos.X > this.position.X) dx = 1;
+                    if (normalPos.Y < this.position.Y) dy = -1;
+                    else if (normalPos.Y > this.position.Y) dy = 1;
+
+                    return (dx, dy);
+                }
+                ;
+                int[] dxx = { 0, 0, -1, 1, -1, -1, 1, 1 };
+                int[] dyy = { -1, 1, 0, 0, -1, 1, -1, 1 };
+
+                for (int dir = 0; dir < 8; dir++)
+                {
+                    int i = dxx[dir];
+                    int j = dyy[dir];
+                    if ((i != 0) || (j != 0))
+                    {
+                        Point move = new Point(grid_position.X + i, grid_position.Y + j);
+                        Rectangle testRect = new Rectangle(GridToCoords(move), sprite.Size);
+                        bool collision = obstacles.Any(b => b.Bounds.IntersectsWith(testRect));
+
+                        if (Math.Abs(i) == 1 && Math.Abs(j) == 1)
+                        {
+                            Point moveX = new Point(grid_position.X + i, grid_position.Y);
+                            Point moveY = new Point(grid_position.X, grid_position.Y + j);
+                            Rectangle rectX = new Rectangle(GridToCoords(moveX), sprite.Size);
+                            Rectangle rectY = new Rectangle(GridToCoords(moveY), sprite.Size);
+                            bool collisionX = obstacles.Any(b => b.Bounds.IntersectsWith(rectX));
+                            bool collisionY = obstacles.Any(b => b.Bounds.IntersectsWith(rectY));
+                            if (collisionX || collisionY)
+                                collision = true;
+                        }
+
+                        if (!collision && (howToGetTo[move.Y + Boardsize * (move.X)] == new Point()))
+                        {
+                            howToGetTo[move.Y + Boardsize * (move.X)] = grid_position;
+                            fronta.Enqueue((move, depth + 1));
+                        }
+                    
+                    }
+                }
+            }
+            return (0, 0);
+        }
+
+
+        public override void Move(float deltaTime)
+        {
+            var (dx, dy) = PathFinding(board.player.position);
+
+            float moveAmount = speed * deltaTime;
+            float diagonalFactor = GameSettings.diagonalMove;
+
+            bool isDiagonal = dx != 0 && dy != 0;
+            float factor = isDiagonal ? diagonalFactor : 1.0f;
+            dx *= (int)(moveAmount * factor);
+            dy *= (int)(moveAmount * factor);
+
+            Point newPos = GetMaxPosition(dx, dy);
+            position = newPos;
+        }
+        private Point RoundPointToGrid(Point coords)
+        {
+            Point new_coords = new Point();
+            new_coords.X = (coords.X - board.offsetX) / GameSettings.CellSize;
+            new_coords.Y = (coords.Y - board.offsetY) / GameSettings.CellSize;
+            return new_coords;
+        }
+
+        private Point GridToCoords(Point coords)
+        {
+            Point new_coords = new Point();
+            new_coords.X = coords.X * GameSettings.CellSize + board.offsetX;
+            new_coords.Y = coords.Y * GameSettings.CellSize + board.offsetY;
+            return new_coords;
+        }
+    }
 }
