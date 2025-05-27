@@ -18,6 +18,7 @@ namespace The_Rustwood_Outlaw
         public Board board;
         public List<Barricade> obstacles;
         public List<Entity> entities;
+        public bool IsDestroyed = false;
 
         public Entity(int speed, int health, int damage, PictureBox sprite, Point position, Board board, List<Barricade> obstacles, List<Entity> entities)
         {
@@ -33,6 +34,11 @@ namespace The_Rustwood_Outlaw
 
         public virtual void Update(float deltaTime) 
         {
+            if (this.health <= 0) 
+            { 
+                IsDestroyed = true;
+                return;
+            }
             Move(deltaTime);
             Draw();
         }
@@ -100,11 +106,21 @@ namespace The_Rustwood_Outlaw
 
         public Rectangle Bounds => new Rectangle(position, sprite.Size);
 
+        public virtual void Destroy()
+        {
+            if (board.Controls.Contains(sprite))
+                board.Controls.Remove(sprite);
+            sprite.Dispose();
+            entities.Remove(this);
+        }
+
     }
 
     class Player : Entity
     {
         private HashSet<Keys> pressedKeys;
+        private float shootCooldown = 0f;
+        private float shootDelay = GameSettings.PlayerShootingSpeed;
 
         public Player(int speed, int health, int damage, PictureBox sprite, Point position, HashSet<Keys> keys, Board board, List<Barricade> obstacles, List<Entity> entities)
             : base(speed, health, damage, sprite, position, board, obstacles, entities)
@@ -115,6 +131,7 @@ namespace The_Rustwood_Outlaw
         public override void Update(float deltaTime)
         {
             Move(deltaTime);
+            Shoot(deltaTime);
             Draw();
         }
         public override void Move(float deltaTime) 
@@ -142,8 +159,38 @@ namespace The_Rustwood_Outlaw
             Point newPos = GetMaxPosition(dx, dy);
             position = newPos;
         }
-        
 
+        private void Shoot(float deltaTime)
+        {
+            if (shootCooldown > 0f)
+            {
+                shootCooldown -= deltaTime;
+                return;
+            }
+
+            bool up = pressedKeys.Contains(Keys.Up);
+            bool down = pressedKeys.Contains(Keys.Down);
+            bool left = pressedKeys.Contains(Keys.Left);
+            bool right = pressedKeys.Contains(Keys.Right);
+            int dx = 0, dy = 0;
+            if (up) dy = -1;
+            else if (down) dy = 1;
+            if (left) dx = -1;
+            else if (right) dx = 1;
+            if (dx == 0 && dy == 0) return;
+
+            Point pos = new Point(position.X + 20 * dx, position.Y + 20 * dy);
+            PictureBox sprite = new PictureBox
+            {
+                BackColor = Color.Yellow,
+                Size = new Size(10, 5),
+                Location = pos
+            };
+            board.Controls.Add(sprite);
+            entities.Add(new Bullet(GameSettings.BulletSpeed, GameSettings.BulletHealth, this.damage, sprite, pos, board, obstacles, entities, dx, dy));
+
+            shootCooldown = shootDelay;
+        }
     }
 
 
@@ -288,4 +335,52 @@ namespace The_Rustwood_Outlaw
             return new_coords;
         }
     }
+
+
+    class Bullet : Entity
+    {
+        float fx, fy;
+        float fdx, fdy;
+
+        public Bullet(int speed, int health, int damage, PictureBox sprite, Point position, Board board, List<Barricade> obstacles, List<Entity> entities, int dx, int dy)
+            : base(speed, health, damage, sprite, position, board, obstacles, entities)
+        {
+            fx = position.X;
+            fy = position.Y;
+            float len = (float)Math.Sqrt(dx * dx + dy * dy);
+            if (len == 0) { fdx = 0; fdy = 0; }
+            else { fdx = dx / len; fdy = dy / len; }
+        }
+
+        public override void Move(float deltaTime)
+        {
+            float moveAmount = speed * deltaTime;
+            fx += fdx * moveAmount;
+            fy += fdy * moveAmount;
+
+            position = new Point((int)Math.Round(fx), (int)Math.Round(fy));
+
+            Rectangle bulletRect = new Rectangle(position, sprite.Size);
+
+            if (obstacles.Any(b => b.Bounds.IntersectsWith(bulletRect)))
+            {
+                IsDestroyed = true;
+                return;
+            }
+
+            foreach (var entity in entities.ToList())
+            {
+                if (entity == this || entity is Player) continue;
+                if (entity.Bounds.IntersectsWith(bulletRect))
+                {
+                    entity.health -= damage;
+                    IsDestroyed = true;
+                    return;
+                }
+            }
+        }
+
+    }
+
 }
+

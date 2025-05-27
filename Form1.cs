@@ -50,8 +50,13 @@ namespace The_Rustwood_Outlaw
         {
             float deltaTime = 1.0f / GameSettings.RefreshRate;
 
-            foreach (var entity in entities)
+            foreach (var entity in entities.ToList())
+            { 
                 entity.Update(deltaTime);
+                if (entity.IsDestroyed) entity.Destroy();
+            }
+
+
         }
 
 
