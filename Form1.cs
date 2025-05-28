@@ -16,8 +16,8 @@ namespace The_Rustwood_Outlaw
         
         HashSet<Keys> pressedKeys = new HashSet<Keys>();
 
-        List<Barricade> barricades = new List<Barricade>();
-        List<Entity> entities = new List<Entity>();
+        public List<Barricade> barricades = new List<Barricade>();
+        public List<Entity> entities = new List<Entity>();
         public Entity player;
 
 
@@ -55,7 +55,7 @@ namespace The_Rustwood_Outlaw
                 entity.Update(deltaTime);
                 if (entity.IsDestroyed) entity.Destroy();
             }
-
+            pictureBox1.SendToBack();
 
         }
 
@@ -63,7 +63,8 @@ namespace The_Rustwood_Outlaw
         public void LoadMap(Board board)
         {
             int MapSize = GameSettings.MapSize;
-            string[] lines = File.ReadAllLines("levels.txt");
+            string[] lines = Properties.Resources.levels.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+
 
             // Find the level by name
             int startIndex = -1;
@@ -98,17 +99,18 @@ namespace The_Rustwood_Outlaw
 
                     if (tile == 'x')
                     {
-                        var barricade = new Barricade(board, new Point(x,y));
+                        var barricade = new Barricade(board, new Point(x, y));
                         barricades.Add(barricade);
                     }
                     else if (tile == 'p')
                     {
                         PictureBox sprite = new PictureBox
                         {
-                            BackColor = Color.Blue, // You can set an image here too
                             Size = size,
-                            Location = position
+                            Location = position,
+                            BackColor = Color.Transparent
                         };
+                        sprite.Image = new Bitmap(Properties.Resources.front_player_1, GameSettings.SpriteSize);
                         board.Controls.Add(sprite);
 
                         player = new Player(GameSettings.PlayerSpeed, GameSettings.PlayerHealth,
@@ -120,10 +122,11 @@ namespace The_Rustwood_Outlaw
                     {
                         PictureBox sprite = new PictureBox
                         {
-                            BackColor = Color.Brown, // You can set an image here too
                             Size = size,
-                            Location = position
+                            Location = position,
+                            BackColor = Color.Transparent
                         };
+                        sprite.Image = new Bitmap(Properties.Resources.red_slime_1, GameSettings.SpriteSize);
                         board.Controls.Add(sprite);
 
                         Enemy enemy = new Enemy(GameSettings.EnemySpeed, GameSettings.EnemyHealth,

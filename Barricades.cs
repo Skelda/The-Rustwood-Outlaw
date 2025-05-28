@@ -29,6 +29,7 @@ namespace The_Rustwood_Outlaw
             sprite.BackColor = Color.SaddleBrown; // placeholder color
             sprite.Size = size;
             sprite.Location = position;
+            sprite.Image = new Bitmap(Properties.Resources.barricade, GameSettings.SpriteSize);
 
             board.Controls.Add(sprite);
         }

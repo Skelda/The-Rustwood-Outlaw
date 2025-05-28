@@ -30,6 +30,7 @@ namespace The_Rustwood_Outlaw
             this.board = board;
             this.obstacles = obstacles;
             this.entities = entities;
+
         }
 
         public virtual void Update(float deltaTime) 
@@ -160,6 +161,9 @@ namespace The_Rustwood_Outlaw
             position = newPos;
         }
 
+        // Fix for CS1503: Argument 1: Nejde převést z void na string.
+        // Fix for CS1503: Argument 2: Nejde převést z System.Drawing.Size na bool.
+
         private void Shoot(float deltaTime)
         {
             if (shootCooldown > 0f)
@@ -173,24 +177,35 @@ namespace The_Rustwood_Outlaw
             bool left = pressedKeys.Contains(Keys.Left);
             bool right = pressedKeys.Contains(Keys.Right);
             int dx = 0, dy = 0;
-            if (up) dy = -1;
-            else if (down) dy = 1;
-            if (left) dx = -1;
-            else if (right) dx = 1;
+            RotateFlipType rt = RotateFlipType.RotateNoneFlipNone;
+            Size bulletSize = GameSettings.BulletSize;
+
+            // Určete směr a velikost střely
+            if (up) { dy = -1; rt = RotateFlipType.RotateNoneFlipNone;}
+            else if (down) { dy = 1; rt = RotateFlipType.Rotate180FlipNone;}
+            if (left) { dx = -1; rt = RotateFlipType.Rotate270FlipNone; bulletSize = new Size(GameSettings.BulletSize.Height, GameSettings.BulletSize.Width); }
+            else if (right) { dx = 1; rt = RotateFlipType.Rotate90FlipNone; bulletSize = new Size(GameSettings.BulletSize.Height, GameSettings.BulletSize.Width); }
             if (dx == 0 && dy == 0) return;
 
             Point pos = new Point(position.X + 20 * dx, position.Y + 20 * dy);
             PictureBox sprite = new PictureBox
             {
-                BackColor = Color.Yellow,
-                Size = new Size(10, 5),
-                Location = pos
+                Size = bulletSize,
+                Location = pos,
+                BackColor = Color.Transparent
             };
+
+            // Nejprve změňte velikost, pak rotujte
+            Bitmap bulletImage = new Bitmap(Resources.bullet);
+            bulletImage.RotateFlip(rt);
+            sprite.Image = new Bitmap(bulletImage, bulletSize);
+
             board.Controls.Add(sprite);
             entities.Add(new Bullet(GameSettings.BulletSpeed, GameSettings.BulletHealth, this.damage, sprite, pos, board, obstacles, entities, dx, dy));
 
             shootCooldown = shootDelay;
         }
+
     }
 
 
