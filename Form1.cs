@@ -72,6 +72,12 @@ namespace The_Rustwood_Outlaw
                 entity.Update(deltaTime);
                 if (entity.IsDestroyed) entity.Destroy();
             }
+
+            foreach (var spawnArea in spawnAreas.ToList())
+            {
+                spawnArea.TryToSpawnEnemy(deltaTime);
+            }
+
             Background.SendToBack();
 
         }
@@ -191,11 +197,28 @@ namespace The_Rustwood_Outlaw
                                     Location = position,
                                     BackColor = Color.Transparent
                                 };
-                                sprite.Image = new Bitmap(Properties.Resources.red_slime_1, GameSettings.SpriteSize);
+
+
+
+                                Bitmap[] framesRight;
+                                Bitmap[] framesLeft;
+                                framesRight = new Bitmap[]
+                                {
+                                new Bitmap(Properties.Resources.green_slime_1, GameSettings.SpriteSize),
+                                new Bitmap(Properties.Resources.green_slime_2, GameSettings.SpriteSize),
+                                new Bitmap(Properties.Resources.green_slime_3, GameSettings.SpriteSize)};
+                                
+                                framesLeft = new Bitmap[]
+                                {
+                                new Bitmap(Properties.Resources.green_slime_4, GameSettings.SpriteSize),
+                                new Bitmap(Properties.Resources.green_slime_5, GameSettings.SpriteSize),
+                                new Bitmap(Properties.Resources.green_slime_6, GameSettings.SpriteSize)};
+
+                                sprite.Image = framesRight[0];
                                 board.Controls.Add(sprite);
 
                                 Enemy enemy = new Enemy(GameSettings.EnemySpeed, GameSettings.EnemyHealth,
-                                                           GameSettings.EnemyDamage, sprite, position, this);
+                                                           GameSettings.EnemyDamage, sprite, position, this, framesLeft, framesRight);
                                 entities.Add(enemy);
                                 break;
                             }

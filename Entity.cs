@@ -20,7 +20,7 @@ namespace The_Rustwood_Outlaw
         public List<Entity> entities;
         public bool IsDestroyed = false;
 
-        public Entity(int speed, int health, int damage, PictureBox sprite, Point position, Board board, List<Barricade> obstacles, List<Entity> entities)
+        public Entity(int speed, int health, int damage, PictureBox sprite, Point position, Board board)
         {
             this.speed = speed;
             this.health = health;
@@ -28,8 +28,8 @@ namespace The_Rustwood_Outlaw
             this.sprite = sprite;
             this.position = position;
             this.board = board;
-            this.obstacles = obstacles;
-            this.entities = entities;
+            this.obstacles = board.barricades;
+            this.entities = board.entities;
 
         }
 
@@ -123,8 +123,8 @@ namespace The_Rustwood_Outlaw
         private float shootCooldown = 0f;
         private float shootDelay = GameSettings.PlayerShootingSpeed;
 
-        public Player(int speed, int health, int damage, PictureBox sprite, Point position, HashSet<Keys> keys, Board board, List<Barricade> obstacles, List<Entity> entities)
-            : base(speed, health, damage, sprite, position, board, obstacles, entities)
+        public Player(int speed, int health, int damage, PictureBox sprite, Point position, HashSet<Keys> keys, Board board)
+            : base(speed, health, damage, sprite, position, board)
         {
             pressedKeys = keys;
         }
@@ -161,8 +161,6 @@ namespace The_Rustwood_Outlaw
             position = newPos;
         }
 
-        // Fix for CS1503: Argument 1: Nejde převést z void na string.
-        // Fix for CS1503: Argument 2: Nejde převést z System.Drawing.Size na bool.
 
         private void Shoot(float deltaTime)
         {
@@ -201,7 +199,7 @@ namespace The_Rustwood_Outlaw
             sprite.Image = new Bitmap(bulletImage, bulletSize);
 
             board.Controls.Add(sprite);
-            entities.Add(new Bullet(GameSettings.BulletSpeed, GameSettings.BulletHealth, this.damage, sprite, pos, board, obstacles, entities, dx, dy));
+            entities.Add(new Bullet(GameSettings.BulletSpeed, GameSettings.BulletHealth, this.damage, sprite, pos, board, dx, dy));
 
             shootCooldown = shootDelay;
         }
@@ -211,11 +209,38 @@ namespace The_Rustwood_Outlaw
 
     class Enemy : Entity
     {
+        private Bitmap[] framesLeft;
+        private Bitmap[] framesRight;
+        private int currentFrame = 0;
+        private float animationTimer = 0f;
+        private float animationSpeed = 0.12f;
+        private bool facingRight = true;
+
+
         private List<PictureBox> pathBoxes = new List<PictureBox>();
 
-        public Enemy(int speed, int health, int damage, PictureBox sprite, Point position, Board board, List<Barricade> obstacles, List<Entity> entities)
-            : base(speed, health, damage, sprite, position, board, obstacles, entities)
+        public Enemy(int speed, int health, int damage, PictureBox sprite, Point position, Board board, Bitmap[] framesLeft, Bitmap[] framesRight)
+        : base(speed, health, damage, sprite, position, board)
         {
+            this.framesLeft = framesLeft;
+            this.framesRight = framesRight;
+        }
+
+        public override void Update(float deltaTime)
+        {
+            base.Update(deltaTime);
+            Animate(deltaTime);
+        }
+
+        private void Animate(float deltaTime)
+        {
+            animationTimer += deltaTime;
+            if (animationTimer >= animationSpeed)
+            {
+                animationTimer = 0f;
+                currentFrame = (currentFrame + 1) % framesLeft.Length;
+                sprite.Image = facingRight ? framesRight[currentFrame] : framesLeft[currentFrame];
+            }
         }
 
         private (int, int) PathFinding(Point goal)
@@ -292,7 +317,7 @@ namespace The_Rustwood_Outlaw
                     {
                         Point move = new Point(grid_position.X + i, grid_position.Y + j);
                         Rectangle testRect = new Rectangle(GridToCoords(move), sprite.Size);
-                        bool collision = obstacles.Any(b => b.Bounds.IntersectsWith(testRect));
+                        bool collision = obstacles.Any(b => b.Bounds.IntersectsWith(testRect)) || board.spawnAreas.Any(b => b.Bounds.IntersectsWith(testRect));
 
                         if (Math.Abs(i) == 1 && Math.Abs(j) == 1)
                         {
@@ -300,11 +325,12 @@ namespace The_Rustwood_Outlaw
                             Point moveY = new Point(grid_position.X, grid_position.Y + j);
                             Rectangle rectX = new Rectangle(GridToCoords(moveX), sprite.Size);
                             Rectangle rectY = new Rectangle(GridToCoords(moveY), sprite.Size);
-                            bool collisionX = obstacles.Any(b => b.Bounds.IntersectsWith(rectX));
-                            bool collisionY = obstacles.Any(b => b.Bounds.IntersectsWith(rectY));
+                            bool collisionX = obstacles.Any(b => b.Bounds.IntersectsWith(rectX)) || board.spawnAreas.Any(b => b.Bounds.IntersectsWith(rectX));
+                            bool collisionY = obstacles.Any(b => b.Bounds.IntersectsWith(rectY)) || board.spawnAreas.Any(b => b.Bounds.IntersectsWith(rectY));
                             if (collisionX || collisionY)
                                 collision = true;
                         }
+                        if (move.Y + Boardsize * (move.X) < 0 || move.Y + Boardsize * (move.X) > howToGetTo.Length - 1) continue;
 
                         if (!collision && (howToGetTo[move.Y + Boardsize * (move.X)] == new Point()))
                         {
@@ -322,6 +348,9 @@ namespace The_Rustwood_Outlaw
         public override void Move(float deltaTime)
         {
             var (dx, dy) = PathFinding(board.player.position);
+
+            if (dx < 0) facingRight = false;
+            else if (dx > 0) facingRight = true;
 
             float moveAmount = speed * deltaTime;
             float diagonalFactor = GameSettings.diagonalMove;
@@ -357,8 +386,8 @@ namespace The_Rustwood_Outlaw
         float fx, fy;
         float fdx, fdy;
 
-        public Bullet(int speed, int health, int damage, PictureBox sprite, Point position, Board board, List<Barricade> obstacles, List<Entity> entities, int dx, int dy)
-            : base(speed, health, damage, sprite, position, board, obstacles, entities)
+        public Bullet(int speed, int health, int damage, PictureBox sprite, Point position, Board board, int dx, int dy)
+            : base(speed, health, damage, sprite, position, board)
         {
             fx = position.X;
             fy = position.Y;

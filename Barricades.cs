@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
 
 namespace The_Rustwood_Outlaw
 {
@@ -53,7 +54,7 @@ namespace The_Rustwood_Outlaw
 
         public SpawnArea(Board board, Point gridposition, float spawnRate) : base(board, gridposition)
         {
-            spawnRate = spawnRate;
+            this.spawnRate = spawnRate;
         }
 
         public override void Destroy()
@@ -64,9 +65,9 @@ namespace The_Rustwood_Outlaw
             board.spawnAreas.Remove(this);
         }
 
-        public void TryToSpawnEnemy(float time)
+        public void TryToSpawnEnemy(float deltatime)
         {
-            timeSinceLastSpawn += time;
+            timeSinceLastSpawn += deltatime*1000;
             if (timeSinceLastSpawn > spawnRate)
             {
                 timeSinceLastSpawn = 0f;
@@ -76,30 +77,33 @@ namespace The_Rustwood_Outlaw
                     // Náhodně vyber barvu slima
                     bool green = random.Next(2) == 0;
 
-                    Bitmap[] frames;
+                    Bitmap[] framesRight;
+                    Bitmap[] framesLeft;
                     if (green)
                     {
-                        frames = new Bitmap[]
+                        framesRight = new Bitmap[]
                         {
                         new Bitmap(Properties.Resources.green_slime_1, GameSettings.SpriteSize),
                         new Bitmap(Properties.Resources.green_slime_2, GameSettings.SpriteSize),
-                        new Bitmap(Properties.Resources.green_slime_3, GameSettings.SpriteSize),
+                        new Bitmap(Properties.Resources.green_slime_3, GameSettings.SpriteSize)};
+                        framesLeft = new Bitmap[]
+                        {
                         new Bitmap(Properties.Resources.green_slime_4, GameSettings.SpriteSize),
                         new Bitmap(Properties.Resources.green_slime_5, GameSettings.SpriteSize),
-                        new Bitmap(Properties.Resources.green_slime_6, GameSettings.SpriteSize)
-                        };
+                        new Bitmap(Properties.Resources.green_slime_6, GameSettings.SpriteSize)};
                     }
                     else
                     {
-                        frames = new Bitmap[]
+                        framesRight = new Bitmap[]
                         {
                         new Bitmap(Properties.Resources.red_slime_1, GameSettings.SpriteSize),
                         new Bitmap(Properties.Resources.red_slime_2, GameSettings.SpriteSize),
-                        new Bitmap(Properties.Resources.red_slime_3, GameSettings.SpriteSize),
+                        new Bitmap(Properties.Resources.red_slime_3, GameSettings.SpriteSize)};
+                        framesLeft = new Bitmap[]
+                        {
                         new Bitmap(Properties.Resources.red_slime_4, GameSettings.SpriteSize),
                         new Bitmap(Properties.Resources.red_slime_5, GameSettings.SpriteSize),
-                        new Bitmap(Properties.Resources.red_slime_6, GameSettings.SpriteSize)
-                        };
+                        new Bitmap(Properties.Resources.red_slime_6, GameSettings.SpriteSize)};
                     }
 
                     PictureBox sprite = new PictureBox
@@ -107,7 +111,7 @@ namespace The_Rustwood_Outlaw
                         Size = size,
                         Location = position,
                         BackColor = Color.Transparent,
-                        Image = frames[0]
+                        Image = framesRight[0]
                     };
                     board.Controls.Add(sprite);
 
@@ -117,7 +121,9 @@ namespace The_Rustwood_Outlaw
                         GameSettings.EnemyDamage,
                         sprite,
                         position,
-                        board
+                        board,
+                        framesLeft, 
+                        framesRight
                     );
                     board.entities.Add(slime);
                 }
