@@ -202,26 +202,27 @@ namespace The_Rustwood_Outlaw.Properties {
         
         /// <summary>
         ///   Vyhledá lokalizovaný řetězec podobný Name:level1
-        ///xxxxxxxxxxxxxxxxxxxx
-        ///xx.................x
-        ///x.x................x
-        ///x..x....x..........x
-        ///x...x...x..........x
-        ///x....xe.x..........x
-        ///x.....x.x..........x
-        ///x......xx..........x
-        ///x.......x..........x
-        ///x.........p........x
-        ///x..................x
-        ///x..................x
-        ///x..................x
-        ///x..................x
-        ///x..................x
-        ///x..................x
-        ///x..................x
-        ///x..................x
-        ///x..................x
-        ///xxxxxxxxxxxxxxxxxxxx
+        ///xxxxxxxxxxxxxxxxxxxxx
+        ///x...................x
+        ///x.......e...........x
+        ///x...................x
+        ///x...................x
+        ///x....xxx.....xxx....x
+        ///x....x.........x....x
+        ///x....x.........x....x
+        ///x...................x
+        ///x.........p.........x
+        ///x...................x
+        ///x...................x
+        ///x...................x
+        ///x....x.........x....x
+        ///x....x.........x....x
+        ///x....xxx.....xxx....x
+        ///x...................x
+        ///x...................x
+        ///x...................x
+        ///xe..................x
+        ///xxxxxxxxxxxxxxxxxxxxx
         ///.
         /// </summary>
         internal static string levels {
@@ -286,6 +287,16 @@ namespace The_Rustwood_Outlaw.Properties {
         internal static System.Drawing.Bitmap red_slime_6 {
             get {
                 object obj = ResourceManager.GetObject("red_slime_6", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledává lokalizovaný prostředek typu System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap spawn_area {
+            get {
+                object obj = ResourceManager.GetObject("spawn_area", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

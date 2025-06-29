@@ -181,6 +181,9 @@
   <data name="red_slime_6" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\red_slime_6.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="spawn_area" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\spawn_area_pixel_art.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="srna_1" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\srna_1.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
