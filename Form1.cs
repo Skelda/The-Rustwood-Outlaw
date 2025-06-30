@@ -12,15 +12,22 @@ namespace The_Rustwood_Outlaw
     public partial class Board : Form
     {
 
-        Timer gameTimer = new Timer();
         
         HashSet<Keys> pressedKeys = new HashSet<Keys>();
 
+        private static List<Level> levels = new List<Level>();
+
+        Timer gameTimer = new Timer();
         public List<Barricade> barricades = new List<Barricade>();
         public List<SpawnArea> spawnAreas = new List<SpawnArea>();
         public List<Entity> entities = new List<Entity>();
-        private static List<Level> levels = new List<Level>();
-        public Entity player;
+        public List<Item> items = new List<Item>();
+        public int level;
+        public int score;
+        public Player player;
+
+        private int lastDrawnHearts = -1;
+
 
         private int totalTime; 
         private int timeLeft;
@@ -30,11 +37,12 @@ namespace The_Rustwood_Outlaw
         public int mapPixelSize;
         public int offsetX;
         public int offsetY;
-        public int level;
 
         public Board()
         {
             InitializeComponent();
+            this.difficulty.DataSource = Enum.GetValues(typeof(Difficulty));
+            this.difficulty.SelectedIndex = (int)GameSettings.difficulty;
             MainMenu.Visible = true;
         }
 
@@ -51,7 +59,7 @@ namespace The_Rustwood_Outlaw
             gameTimer.Interval = 1000 / GameSettings.RefreshRate;
             gameTimer.Tick += GameLoop;
 
-            gameTimer.Tick += Timer_Tick;
+            gameTimer.Tick += levelTimer;
 
             // Start countdown
             timeLeft = totalTime;
@@ -69,8 +77,13 @@ namespace The_Rustwood_Outlaw
 
             foreach (var entity in entities.ToList())
             {
+                if (entity.IsDestroyed) 
+                { 
+                    entity.Destroy();
+                    continue;
+                }
                 entity.Update(deltaTime);
-                if (entity.IsDestroyed) entity.Destroy();
+                
             }
 
             foreach (var spawnArea in spawnAreas.ToList())
@@ -78,11 +91,18 @@ namespace The_Rustwood_Outlaw
                 spawnArea.TryToSpawnEnemy(deltaTime);
             }
 
+            foreach (var item in items.ToList())
+            {
+                item.Update(deltaTime);
+            }
+
+            DrawHearts();
+            lScore.Text = $"Score: {score}";
             Background.SendToBack();
 
         }
 
-        private void Timer_Tick(object sender, EventArgs e)
+        private void levelTimer(object sender, EventArgs e)
         {
             timeLeft -= 1000 / GameSettings.RefreshRate;
             if (timeLeft >= 0)
@@ -95,6 +115,7 @@ namespace The_Rustwood_Outlaw
                 foreach (var entity in this.entities.ToList()) entity.Destroy();
                 foreach (var barricade in this.barricades.ToList()) barricade.Destroy();
                 foreach (var spawnarea in this.spawnAreas.ToList()) spawnarea.Destroy();
+                this.lLevel.Text = $"Level: {level}";
                 LoadMap(this, level);
             }
         }
@@ -143,13 +164,13 @@ namespace The_Rustwood_Outlaw
             int multiplier = 1;
             if (levelIndex >= levels.Count)
             {
-                multiplier = levels.Count - 1 - levelIndex;
+                multiplier = levelIndex - levels.Count + 1;
                 levelIndex = levels.Count-1;
             }
             Level level = levels[levelIndex];
 
-            board.totalTime = level.Time;
-            board.timeLeft = level.Time;
+            board.totalTime = level.Time * multiplier;
+            board.timeLeft = level.Time * multiplier;
 
             progressBar1.Maximum = totalTime;
             progressBar1.Value = totalTime;
@@ -184,8 +205,20 @@ namespace The_Rustwood_Outlaw
                                 sprite.Image = new Bitmap(Properties.Resources.front_player_1, GameSettings.SpriteSize);
                                 board.Controls.Add(sprite);
 
+                                Bitmap[] framesUp = new Bitmap[]
+                                {
+                                    new Bitmap(Properties.Resources.back_player_1, GameSettings.SpriteSize),
+                                    new Bitmap(Properties.Resources.back_player_2, GameSettings.SpriteSize)
+                                };
+
+                                Bitmap[] framesDown = new Bitmap[]
+                                {
+                                    new Bitmap(Properties.Resources.front_player_1, GameSettings.SpriteSize),
+                                    new Bitmap(Properties.Resources.front_player_2, GameSettings.SpriteSize)
+                                };
+
                                 player = new Player(GameSettings.PlayerSpeed, GameSettings.PlayerHealth,
-                                                           GameSettings.PlayerDamage, sprite, position, pressedKeys, this);
+                                                           GameSettings.PlayerDamage, sprite, position, pressedKeys, this, framesUp, framesDown);
                                 entities.Add(player);
                                 break;
                             }
@@ -224,16 +257,7 @@ namespace The_Rustwood_Outlaw
                             }
                         case 's':
                             {
-                                PictureBox sprite = new PictureBox
-                                {
-                                    Size = size,
-                                    Location = position,
-                                    BackColor = Color.Transparent
-                                };
-                                sprite.Image = new Bitmap(Properties.Resources.spawn_area, GameSettings.SpriteSize);
-                                board.Controls.Add(sprite);
-
-                                SpawnArea area = new SpawnArea(board, new Point(x, y), level.SpawnRate);
+                                SpawnArea area = new SpawnArea(board, new Point(x, y), level.SpawnRate / multiplier);
                                 spawnAreas.Add(area);
                                 break;
                             }
@@ -250,13 +274,15 @@ namespace The_Rustwood_Outlaw
                 paused = !paused;
                 if (paused)
                 {
-                    PauseText.Visible = true;
+                    Pause.BringToFront();
+                    Pause.Visible = true;
                     gameTimer.Stop();
                 }
                 else 
-                { 
-                    PauseText.Visible = false;
-                    gameTimer.Start();
+                {
+                    bContinue_Click(); 
+                    paused = !paused;
+
                 }
             }
         }
@@ -266,10 +292,85 @@ namespace The_Rustwood_Outlaw
             pressedKeys.Remove(e.KeyCode);
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void bStartGame_Click(object sender, EventArgs e)
         {
+            paused = false;
             Startgame();
             MainMenu.Visible = false;
+            pYouLost.Visible = false;
         }
+
+        private void bContinue_Click(object sender=null, EventArgs e=null)
+        {
+            switch (difficulty.SelectedIndex)
+            {
+                case 0:
+                    {
+                        GameSettings.enemySpawnChance = 1 / 6f;
+                        break;
+                    }
+                case 1:
+                    {
+                        GameSettings.enemySpawnChance = 1 / 4f;
+                        break;
+                    }
+                case 2:
+                    {
+                        GameSettings.enemySpawnChance = 1 / 2f;
+                        break;
+                    }
+                case 3:
+                    {
+                        GameSettings.enemySpawnChance = 1f;
+                        break;
+                    }
+            }
+            paused = !paused;
+            Pause.Visible = false;
+            gameTimer.Start();
+        }
+
+        public void DrawHearts()
+        {
+            if (player == null) return;
+            if (player.health == lastDrawnHearts) return;
+
+            panelHearts.Controls.Clear();
+            int heartWidth = 16;
+            int spacing = 1;
+            int totalWidth = player.health * heartWidth + Math.Max(0, player.health - 1) * spacing;
+            panelHearts.Width = totalWidth;
+
+            for (int i = 0; i < player.health; i++)
+            {
+                PictureBox heart = new PictureBox
+                {
+                    Image = Properties.Resources.heart,
+                    SizeMode = PictureBoxSizeMode.StretchImage,
+                    Size = new Size(heartWidth, heartWidth),
+                    Location = new Point(i * (heartWidth + spacing), 0),
+                    BackColor = Color.Transparent
+                };
+                panelHearts.Controls.Add(heart);
+            }
+            lastDrawnHearts = player.health;
+        }
+
+        public void YouLost()
+        {
+            gameTimer.Stop();
+            pYouLost.Visible = true;
+            lLostScreenLevel.Text = $"Level: {level}";
+            lLostScreenScore.Text = $"Score: {score}";
+            gameTimer = new Timer();
+            foreach (var bar in barricades.ToList()) bar.Destroy();
+            foreach (var ent in entities.ToList()) ent.IsDestroyed = true;
+            foreach (var spa in spawnAreas.ToList()) spa.Destroy();
+            foreach (var item in items.ToList()) item.Destroy();
+
+            level = 0;
+            score = 0;
+            lastDrawnHearts = -1;
+    }
     }
 }

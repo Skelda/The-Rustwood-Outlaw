@@ -45,6 +45,16 @@ namespace The_Rustwood_Outlaw
             Draw();
         }
 
+        protected virtual bool CollidesAt(int x, int y)
+        {
+            Point testPos = new Point(x, y);
+            Rectangle testRect = new Rectangle(testPos, sprite.Size);
+            bool collision = obstacles.Any(b => b.Bounds.IntersectsWith(testRect)) ||
+                                     entities.Any(e => (!object.ReferenceEquals(e, this) &&
+                                                         e.Bounds.IntersectsWith(testRect)));
+            return collision;
+        }
+
         protected Point GetMaxPosition(int dx, int dy)
         {
             Point newPos = position;
@@ -55,13 +65,7 @@ namespace The_Rustwood_Outlaw
                 int stepX = Math.Sign(dx);
                 for (int i = 1; i <= Math.Abs(dx); i++)
                 {
-                    Point testPos = new Point(newPos.X + stepX, newPos.Y);
-                    Rectangle testRect = new Rectangle(testPos, sprite.Size);
-                    bool collision = obstacles.Any(b => b.Bounds.IntersectsWith(testRect)) ||
-                                     entities.Any(e => (!object.ReferenceEquals(e, this) &&
-                                                         e.Bounds.IntersectsWith(testRect)));
-;
-                    if (collision)
+                    if (CollidesAt(newPos.X + stepX, newPos.Y))
                         break;
                     newPos.X += stepX;
                 }
@@ -73,12 +77,7 @@ namespace The_Rustwood_Outlaw
                 int stepY = Math.Sign(dy);
                 for (int i = 1; i <= Math.Abs(dy); i++)
                 {
-                    Point testPos = new Point(newPos.X, newPos.Y + stepY);
-                    Rectangle testRect = new Rectangle(testPos, sprite.Size);
-                    bool collision = obstacles.Any(b => b.Bounds.IntersectsWith(testRect)) ||
-                                     entities.Any(e => (!object.ReferenceEquals(e, this) &&
-                                                         e.Bounds.IntersectsWith(testRect)));
-                    if (collision)
+                    if (CollidesAt(newPos.X, newPos.Y+ stepY))
                         break;
                     newPos.Y += stepY;
                 }
@@ -129,9 +128,15 @@ namespace The_Rustwood_Outlaw
 
 
         private HashSet<Keys> pressedKeys;
-        public int score = 0;
         private float shootCooldown = 0f;
-        private float shootDelay = GameSettings.PlayerShootingSpeed;
+        public float shootDelay = GameSettings.PlayerShootingSpeed;
+
+        public float speedBoostTimer = 0;
+        public float fireRateTimer = 0;
+        public float damageRateTimer = 0;
+        public float multishotTimer = 0;
+
+        public bool multishot = false;
 
         public Player(int speed, int health, int damage, PictureBox sprite, Point position, HashSet<Keys> keys, Board board, Bitmap[] framesUp, Bitmap[] framesDown)
         : base(speed, health, damage, sprite, position, board)
@@ -143,10 +148,39 @@ namespace The_Rustwood_Outlaw
 
         public override void Update(float deltaTime)
         {
+            if (health <= 0)
+            {
+                board.YouLost();
+            }
+
             Move(deltaTime);
             Shoot(deltaTime);
             Draw();
             Animate(deltaTime);
+            UpdateItems(deltaTime);
+        }
+
+        protected override bool CollidesAt(int x, int y)
+        {
+            Point testPos = new Point(x, y);
+            Rectangle testRect = new Rectangle(testPos, sprite.Size);
+            bool collision = obstacles.Any(b => b.Bounds.IntersectsWith(testRect)) ||
+                             entities.Any(e => (!object.ReferenceEquals(e, this) &&
+                                                         e.Bounds.IntersectsWith(testRect))) ||
+                             board.spawnAreas.Any(a => a.Bounds.IntersectsWith(testRect));
+            return collision;
+        }
+
+        private void UpdateItems(float deltatime)
+        {
+            speedBoostTimer = Math.Max(speedBoostTimer - deltatime, 0);
+            fireRateTimer = Math.Max(fireRateTimer - deltatime, 0);
+            damageRateTimer = Math.Max(damageRateTimer - deltatime, 0);
+            multishotTimer = Math.Max(multishotTimer - deltatime, 0);
+            if (speedBoostTimer == 0) speed = GameSettings.PlayerSpeed;
+            if (fireRateTimer == 0) shootDelay = GameSettings.PlayerShootingSpeed;
+            if (damageRateTimer == 0) damage = GameSettings.PlayerDamage;
+            if (multishotTimer == 0) multishot = false;
         }
 
         private void Animate(float deltaTime)
@@ -202,31 +236,30 @@ namespace The_Rustwood_Outlaw
             bool left = pressedKeys.Contains(Keys.Left);
             bool right = pressedKeys.Contains(Keys.Right);
             int dx = 0, dy = 0;
-            RotateFlipType rt = RotateFlipType.RotateNoneFlipNone;
-            Size bulletSize = GameSettings.BulletSize;
 
-            // Určete směr a velikost střely
-            if (up) { dy = -1; rt = RotateFlipType.RotateNoneFlipNone;}
-            else if (down) { dy = 1; rt = RotateFlipType.Rotate180FlipNone;}
-            if (left) { dx = -1; rt = RotateFlipType.Rotate270FlipNone; bulletSize = new Size(GameSettings.BulletSize.Height, GameSettings.BulletSize.Width); }
-            else if (right) { dx = 1; rt = RotateFlipType.Rotate90FlipNone; bulletSize = new Size(GameSettings.BulletSize.Height, GameSettings.BulletSize.Width); }
-            if (dx == 0 && dy == 0) return;
+            if (up) dy = -1;
+            else if (down) dy = 1;
+            if (left) dx = -1;
+            else if (right) dx = 1;
 
-            Point pos = new Point(position.X + 20 * dx, position.Y + 20 * dy);
-            PictureBox sprite = new PictureBox
+            if (dx == 0 && dy == 0) return; // Nestřílíme vůbec
+
+            if (multishot)
             {
-                Size = bulletSize,
-                Location = pos,
-                BackColor = Color.Transparent
-            };
+                for (int ddx = -1; ddx < 2; ddx++)
+                {
+                    for (int ddy = -1; ddy < 2; ddy++)
+                    {
+                        if (ddx == 0 && ddy == 0) continue;
+                        entities.Add(new Bullet(GameSettings.BulletSpeed, GameSettings.BulletHealth, this.damage, sprite, position, board, ddx, ddy));
+                    }
+                }
+            }
 
-            // Nejprve změňte velikost, pak rotujte
-            Bitmap bulletImage = new Bitmap(Resources.bullet);
-            bulletImage.RotateFlip(rt);
-            sprite.Image = new Bitmap(bulletImage, bulletSize);
-
-            board.Controls.Add(sprite);
-            entities.Add(new Bullet(GameSettings.BulletSpeed, GameSettings.BulletHealth, this.damage, sprite, pos, board, dx, dy));
+            else
+            {
+                entities.Add(new Bullet(GameSettings.BulletSpeed, GameSettings.BulletHealth, this.damage, sprite, position, board, dx, dy));
+            }
 
             shootCooldown = shootDelay;
         }
@@ -264,7 +297,7 @@ namespace The_Rustwood_Outlaw
         {
             base.Update(deltaTime);
             if (this.health == 0){
-                board.player.score++;
+                board.score++;
                 TryDropItem();
             }
             Animate(deltaTime);
@@ -422,9 +455,20 @@ namespace The_Rustwood_Outlaw
             dx *= (int)(moveAmount * factor);
             dy *= (int)(moveAmount * factor);
 
+            Point testPos = new Point(position.X+dx, position.Y+dy);
+            Rectangle testRect = new Rectangle(testPos, sprite.Size);
+
+            if (testRect.IntersectsWith(board.player.Bounds)) 
+            {
+                board.player.health--;
+                IsDestroyed = true;
+                return;
+            }
+
             Point newPos = GetMaxPosition(dx, dy);
             position = newPos;
         }
+
         private Point RoundPointToGrid(Point coords)
         {
             Point new_coords = new Point();
@@ -447,7 +491,6 @@ namespace The_Rustwood_Outlaw
             int chance = rnd.Next(0, 100);
             if (chance < GameSettings.itemDropChance)
             {
-                // Náhodně vyber typ itemu
                 Array values = Enum.GetValues(typeof(ItemType));
                 ItemType randomType = (ItemType)values.GetValue(rnd.Next(values.Length));
                 board.items.Add(new Item(randomType, 1, position, board));  
@@ -464,6 +507,31 @@ namespace The_Rustwood_Outlaw
         public Bullet(int speed, int health, int damage, PictureBox sprite, Point position, Board board, int dx, int dy)
             : base(speed, health, damage, sprite, position, board)
         {
+            position = new Point(position.X + 20 * dx, position.Y + 20 * dy);
+
+
+            RotateFlipType rt = RotateFlipType.RotateNoneFlipNone;
+            Size bulletSize = GameSettings.BulletSize;
+
+            if (dy == -1) rt = RotateFlipType.RotateNoneFlipNone;
+            else if (dy == 1) rt = RotateFlipType.Rotate180FlipNone; 
+            if (dx == -1) {rt = RotateFlipType.Rotate270FlipNone; bulletSize = new Size(bulletSize.Height, bulletSize.Width); }
+            else if (dx == 1) {rt = RotateFlipType.Rotate90FlipNone; bulletSize = new Size(bulletSize.Height, bulletSize.Width); }
+
+            this.sprite = new PictureBox
+            {
+                Size = bulletSize,
+                Location = position,
+                BackColor = Color.Transparent
+            };
+
+            // Nejprve změňte velikost, pak rotujte
+            Bitmap bulletImage = new Bitmap(Resources.bullet);
+            bulletImage.RotateFlip(rt);
+            this.sprite.Image = new Bitmap(bulletImage, bulletSize);
+
+            board.Controls.Add(this.sprite);
+
             fx = position.X;
             fy = position.Y;
             float len = (float)Math.Sqrt(dx * dx + dy * dy);

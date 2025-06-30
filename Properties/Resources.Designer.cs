@@ -113,6 +113,26 @@ namespace The_Rustwood_Outlaw.Properties {
         /// <summary>
         ///   Vyhledává lokalizovaný prostředek typu System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap damageBoost {
+            get {
+                object obj = ResourceManager.GetObject("damageBoost", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledává lokalizovaný prostředek typu System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap fireRateBoost {
+            get {
+                object obj = ResourceManager.GetObject("fireRateBoost", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledává lokalizovaný prostředek typu System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap front_player_1 {
             get {
                 object obj = ResourceManager.GetObject("front_player_1", resourceCulture);
@@ -201,33 +221,62 @@ namespace The_Rustwood_Outlaw.Properties {
         }
         
         /// <summary>
-        ///   Vyhledá lokalizovaný řetězec podobný Name:level1
-        ///xxxxxxxxxxxxxxxxxxxxx
+        ///   Vyhledává lokalizovaný prostředek typu System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap healthBoost {
+            get {
+                object obj = ResourceManager.GetObject("healthBoost", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledává lokalizovaný prostředek typu System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap heart {
+            get {
+                object obj = ResourceManager.GetObject("heart", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledá lokalizovaný řetězec podobný Name:level1 Time:100000 SpawnRate:5000 Boss:0
+        ///xxxxxxxxxsssxxxxxxxxx
         ///x...................x
-        ///x.......e...........x
-        ///x...................x
-        ///x...................x
-        ///x....xxx.....xxx....x
-        ///x....x.........x....x
-        ///x....x.........x....x
-        ///x...................x
-        ///x.........p.........x
         ///x...................x
         ///x...................x
         ///x...................x
-        ///x....x.........x....x
-        ///x....x.........x....x
-        ///x....xxx.....xxx....x
+        ///x...................x
+        ///x...................x
+        ///x...................x
+        ///x...................x
+        ///s...................s
+        ///s.........p.........s
+        ///s...................s
+        ///x...................x
+        ///x...................x
+        ///x...................x
+        ///x...................x
         ///x...................x
         ///x...................x
         ///x...................x
         ///xe..................x
-        ///xxxxxxxxxxxxxxxxxxxxx
-        ///.
+        ///xxxxx [zbytek řetězce byl zkrácen];.
         /// </summary>
         internal static string levels {
             get {
                 return ResourceManager.GetString("levels", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledává lokalizovaný prostředek typu System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap multishot {
+            get {
+                object obj = ResourceManager.GetObject("multishot", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
             }
         }
         
@@ -297,6 +346,16 @@ namespace The_Rustwood_Outlaw.Properties {
         internal static System.Drawing.Bitmap spawn_area {
             get {
                 object obj = ResourceManager.GetObject("spawn_area", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Vyhledává lokalizovaný prostředek typu System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap speedBoost {
+            get {
+                object obj = ResourceManager.GetObject("speedBoost", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

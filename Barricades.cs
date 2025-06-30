@@ -12,10 +12,10 @@ namespace The_Rustwood_Outlaw
 {
     public class Barricade
     {
-        public PictureBox sprite;
-        public Point position;
-        public Point gridposition;
-        public Size size;
+        protected PictureBox sprite;
+        protected Point position;
+        protected Point gridposition;
+        protected Size size;
         protected Board board;
 
         public Barricade(Board board, Point gridposition)
@@ -55,6 +55,7 @@ namespace The_Rustwood_Outlaw
         public SpawnArea(Board board, Point gridposition, float spawnRate) : base(board, gridposition)
         {
             this.spawnRate = spawnRate;
+            this.sprite.Image = new Bitmap(Properties.Resources.spawn_area, GameSettings.SpriteSize);
         }
 
         public override void Destroy()
@@ -71,7 +72,7 @@ namespace The_Rustwood_Outlaw
             if (timeSinceLastSpawn > spawnRate)
             {
                 timeSinceLastSpawn = 0f;
-                bool succesfulSpawn = (1 == random.Next(1, 4));
+                bool succesfulSpawn = (1 == random.Next(1, (int)(1/GameSettings.enemySpawnChance+1)));
                 if (succesfulSpawn)
                 {
                     // Náhodně vyber barvu slima
