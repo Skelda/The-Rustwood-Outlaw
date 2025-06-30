@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using The_Rustwood_Outlaw.Properties;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
 using static The_Rustwood_Outlaw.Entity;
 
 namespace The_Rustwood_Outlaw
@@ -117,16 +118,27 @@ namespace The_Rustwood_Outlaw
 
     }
 
-    class Player : Entity
+    public class Player : Entity
     {
+        private Bitmap[] framesUp;
+        private Bitmap[] framesDown;
+        private int currentFrame = 0;
+        private float animationTimer = 0f;
+        private float animationSpeed = 0.12f;
+        private bool facingDown = true;
+
+
         private HashSet<Keys> pressedKeys;
+        public int score = 0;
         private float shootCooldown = 0f;
         private float shootDelay = GameSettings.PlayerShootingSpeed;
 
-        public Player(int speed, int health, int damage, PictureBox sprite, Point position, HashSet<Keys> keys, Board board)
-            : base(speed, health, damage, sprite, position, board)
+        public Player(int speed, int health, int damage, PictureBox sprite, Point position, HashSet<Keys> keys, Board board, Bitmap[] framesUp, Bitmap[] framesDown)
+        : base(speed, health, damage, sprite, position, board)
         {
-            pressedKeys = keys;
+            this.framesUp = framesUp;
+            this.framesDown = framesDown;
+            this.pressedKeys = keys;
         }
 
         public override void Update(float deltaTime)
@@ -134,13 +146,28 @@ namespace The_Rustwood_Outlaw
             Move(deltaTime);
             Shoot(deltaTime);
             Draw();
+            Animate(deltaTime);
         }
+
+        private void Animate(float deltaTime)
+        {
+            animationTimer += deltaTime;
+            if (animationTimer >= animationSpeed)
+            {
+                animationTimer = 0f;
+                currentFrame = (currentFrame + 1) % framesUp.Length;
+                sprite.Image = facingDown ? framesDown[currentFrame] : framesUp[currentFrame];
+            }
+        }
+
         public override void Move(float deltaTime) 
         {
             bool up = pressedKeys.Contains(Keys.W);
             bool down = pressedKeys.Contains(Keys.S);
             bool left = pressedKeys.Contains(Keys.A);
             bool right = pressedKeys.Contains(Keys.D);
+
+            facingDown = !up;
 
             float moveAmount = speed * deltaTime;
             float diagonalFactor = GameSettings.diagonalMove;
@@ -207,7 +234,7 @@ namespace The_Rustwood_Outlaw
     }
 
 
-    class Enemy : Entity
+    public class Enemy : Entity
     {
         private Bitmap[] framesLeft;
         private Bitmap[] framesRight;
@@ -215,6 +242,13 @@ namespace The_Rustwood_Outlaw
         private float animationTimer = 0f;
         private float animationSpeed = 0.12f;
         private bool facingRight = true;
+
+
+        private static Dictionary<(Point, Point), List<Point>> pathCache = new Dictionary<(Point, Point), List<Point>>();
+        private Point lastStart = Point.Empty;
+        private Point lastGoal = Point.Empty;
+        private List<Point> lastPath = null;
+        private int lastPathIndex = 0;
 
 
         private List<PictureBox> pathBoxes = new List<PictureBox>();
@@ -229,6 +263,10 @@ namespace The_Rustwood_Outlaw
         public override void Update(float deltaTime)
         {
             base.Update(deltaTime);
+            if (this.health == 0){
+                board.player.score++;
+                TryDropItem();
+            }
             Animate(deltaTime);
         }
 
@@ -248,100 +286,124 @@ namespace The_Rustwood_Outlaw
             Point gridStart = RoundPointToGrid(position);
             Point gridGoal = RoundPointToGrid(goal);
 
-            if (gridGoal == gridStart) return (0 , 0);
-
-            int Boardsize = GameSettings.MapSize;
-
-            Point[] howToGetTo = new Point[Boardsize * Boardsize];
-            Queue<(Point, int)> fronta = new Queue<(Point, int)>();
-            fronta.Enqueue((gridStart, 0));
-            howToGetTo[gridStart.Y + Boardsize * (gridStart.X)] = gridStart;
-            while (fronta.Count != 0)
+            if (lastPath != null && lastStart == gridStart && lastGoal == gridGoal && lastPathIndex < lastPath.Count - 1)
             {
-                (Point, int) pos = fronta.Dequeue();
-                Point grid_position = pos.Item1;
-                int depth = pos.Item2;
-                if (grid_position == gridGoal)
+                lastPathIndex++;
+                Point next = lastPath[lastPathIndex];
+                return (Math.Sign(next.X - gridStart.X), Math.Sign(next.Y - gridStart.Y));
+            }
+
+            var cacheKey = (gridStart, gridGoal);
+            if (pathCache.TryGetValue(cacheKey, out var cachedPath) && cachedPath.Count > 1)
+            {
+                lastPath = cachedPath;
+                lastStart = gridStart;
+                lastGoal = gridGoal;
+                lastPathIndex = 1;
+                Point next = lastPath[lastPathIndex];
+                return (Math.Sign(next.X - gridStart.X), Math.Sign(next.Y - gridStart.Y));
+            }
+
+            var prevFromStart = new Dictionary<Point, Point>();
+            var prevFromGoal = new Dictionary<Point, Point>();
+            var queueStart = new Queue<Point>();
+            var queueGoal = new Queue<Point>();
+            var visitedStart = new HashSet<Point>();
+            var visitedGoal = new HashSet<Point>();
+
+            queueStart.Enqueue(gridStart);
+            queueGoal.Enqueue(gridGoal);
+            visitedStart.Add(gridStart);
+            visitedGoal.Add(gridGoal);
+
+            Point? meetPoint = null;
+
+            int[] dxx = { 0, 0, -1, 1, -1, -1, 1, 1 };
+            int[] dyy = { -1, 1, 0, 0, -1, 1, -1, 1 };
+
+            while (queueStart.Count > 0 && queueGoal.Count > 0)
+            {
+                if (Expand(queueStart, visitedStart, visitedGoal, prevFromStart, prevFromGoal, out meetPoint, dxx, dyy)) break;
+                if (Expand(queueGoal, visitedGoal, visitedStart, prevFromGoal, prevFromStart, out meetPoint, dxx, dyy)) break;
+            }
+
+            if (meetPoint != null)
+            {
+                var path = new List<Point>();
+                Point p = meetPoint.Value;
+                while (p != gridStart)
                 {
-                    Point nextStep = new Point();
-                    foreach (var pb in pathBoxes)
-                    {
-                        if (board.Controls.Contains(pb))
-                            board.Controls.Remove(pb);
-                        pb.Dispose();
-                    }
-                    pathBoxes.Clear();
-                    while (howToGetTo[grid_position.Y  + Boardsize * (grid_position.X)] != gridStart)
-                    {
-                        grid_position = howToGetTo[grid_position.Y + Boardsize * (grid_position.X)];
-
-
-                        if (GameSettings.drawPathfinding)
-                        {
-                            PictureBox ss = new PictureBox
-                            {
-                                BackColor = Color.Yellow,
-                                Size = sprite.Size,
-                                Location = grid_position
-                            };
-
-                            if (!board.Controls.Contains(ss))
-                            {
-                                board.Controls.Add(ss);
-                                ss.BringToFront();
-                            }
-                            ss.Location = GridToCoords(grid_position);
-                            ss.Visible = true;
-                            pathBoxes.Add(ss);
-                        }
-                        
-                    }
-                    int dx = 0, dy = 0;
-                    Point normalPos = GridToCoords(grid_position);
-                    if (normalPos.X < this.position.X) dx = -1;
-                    else if (normalPos.X > this.position.X) dx = 1;
-                    if (normalPos.Y < this.position.Y) dy = -1;
-                    else if (normalPos.Y > this.position.Y) dy = 1;
-
-                    return (dx, dy);
+                    path.Add(p);
+                    p = prevFromStart[p];
                 }
-                ;
-                int[] dxx = { 0, 0, -1, 1, -1, -1, 1, 1 };
-                int[] dyy = { -1, 1, 0, 0, -1, 1, -1, 1 };
+                path.Add(gridStart);
+                path.Reverse();
 
-                for (int dir = 0; dir < 8; dir++)
+                if (prevFromGoal.ContainsKey(meetPoint.Value))
                 {
-                    int i = dxx[dir];
-                    int j = dyy[dir];
-                    if ((i != 0) || (j != 0))
+                    p = prevFromGoal[meetPoint.Value];
+                    while (p != gridGoal)
                     {
-                        Point move = new Point(grid_position.X + i, grid_position.Y + j);
-                        Rectangle testRect = new Rectangle(GridToCoords(move), sprite.Size);
-                        bool collision = obstacles.Any(b => b.Bounds.IntersectsWith(testRect)) || board.spawnAreas.Any(b => b.Bounds.IntersectsWith(testRect));
+                        path.Add(p);
+                        p = prevFromGoal[p];
+                    }
+                    path.Add(gridGoal);
+                }
+                else
+                {
+                    path.Add(gridGoal);
+                }
 
-                        if (Math.Abs(i) == 1 && Math.Abs(j) == 1)
-                        {
-                            Point moveX = new Point(grid_position.X + i, grid_position.Y);
-                            Point moveY = new Point(grid_position.X, grid_position.Y + j);
-                            Rectangle rectX = new Rectangle(GridToCoords(moveX), sprite.Size);
-                            Rectangle rectY = new Rectangle(GridToCoords(moveY), sprite.Size);
-                            bool collisionX = obstacles.Any(b => b.Bounds.IntersectsWith(rectX)) || board.spawnAreas.Any(b => b.Bounds.IntersectsWith(rectX));
-                            bool collisionY = obstacles.Any(b => b.Bounds.IntersectsWith(rectY)) || board.spawnAreas.Any(b => b.Bounds.IntersectsWith(rectY));
-                            if (collisionX || collisionY)
-                                collision = true;
-                        }
-                        if (move.Y + Boardsize * (move.X) < 0 || move.Y + Boardsize * (move.X) > howToGetTo.Length - 1) continue;
+                pathCache[cacheKey] = path;
+                lastPath = path;
+                lastStart = gridStart;
+                lastGoal = gridGoal;
+                lastPathIndex = 1;
+                if (path.Count > 1)
+                {
+                    Point next = path[1];
+                    return (Math.Sign(next.X - gridStart.X), Math.Sign(next.Y - gridStart.Y));
+                }
+            }
 
-                        if (!collision && (howToGetTo[move.Y + Boardsize * (move.X)] == new Point()))
-                        {
-                            howToGetTo[move.Y + Boardsize * (move.X)] = grid_position;
-                            fronta.Enqueue((move, depth + 1));
-                        }
-                    
+
+            lastPath = null;
+            return (0, 0);
+        }
+
+        private bool Expand(
+            Queue<Point> queue,
+            HashSet<Point> visitedThis,
+            HashSet<Point> visitedOther,
+            Dictionary<Point, Point> prevThis,
+            Dictionary<Point, Point> prevOther,
+            out Point? meetPoint,
+            int[] dxx, int[] dyy)
+        {
+            meetPoint = null;
+            if (queue.Count == 0) return false;
+            Point current = queue.Dequeue();
+            for (int dir = 0; dir < 8; dir++)
+            {
+                int nx = current.X + dxx[dir];
+                int ny = current.Y + dyy[dir];
+                Point next = new Point(nx, ny);
+                Rectangle testRect = new Rectangle(GridToCoords(next), sprite.Size);
+                bool collision = obstacles.Any(b => b.Bounds.IntersectsWith(testRect)) || board.spawnAreas.Any(b => b.Bounds.IntersectsWith(testRect));
+                if (collision) continue;
+                if (!visitedThis.Contains(next))
+                {
+                    visitedThis.Add(next);
+                    prevThis[next] = current;
+                    queue.Enqueue(next);
+                    if (visitedOther.Contains(next))
+                    {
+                        meetPoint = next;
+                        return true;
                     }
                 }
             }
-            return (0, 0);
+            return false;
         }
 
 
@@ -378,6 +440,19 @@ namespace The_Rustwood_Outlaw
             new_coords.Y = coords.Y * GameSettings.CellSize + board.offsetY;
             return new_coords;
         }
+
+        public void TryDropItem()
+        {
+            Random rnd = new Random();
+            int chance = rnd.Next(0, 100);
+            if (chance < GameSettings.itemDropChance)
+            {
+                // Náhodně vyber typ itemu
+                Array values = Enum.GetValues(typeof(ItemType));
+                ItemType randomType = (ItemType)values.GetValue(rnd.Next(values.Length));
+                board.items.Add(new Item(randomType, 1, position, board));  
+            }
+        }
     }
 
 
@@ -406,7 +481,7 @@ namespace The_Rustwood_Outlaw
 
             Rectangle bulletRect = new Rectangle(position, sprite.Size);
 
-            if (obstacles.Any(b => b.Bounds.IntersectsWith(bulletRect)))
+            if (obstacles.Any(b => b.Bounds.IntersectsWith(bulletRect)) || board.spawnAreas.Any(b => b.Bounds.IntersectsWith(bulletRect)))
             {
                 IsDestroyed = true;
                 return;
