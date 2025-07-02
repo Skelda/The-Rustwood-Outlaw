@@ -289,7 +289,7 @@ namespace The_Rustwood_Outlaw
             this.KeyPreview = true;
             this.Margin = new System.Windows.Forms.Padding(773, 975, 773, 975);
             this.Name = "Board";
-            this.Text = "Form1";
+            this.Text = "The Rustwood Outlaw";
             this.MainMenu.ResumeLayout(false);
             this.Pause.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.Background)).EndInit();
