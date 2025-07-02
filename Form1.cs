@@ -29,12 +29,16 @@ namespace The_Rustwood_Outlaw
         private int lastDrawnHearts = -1;
 
 
-        private int totalTime; 
+        private int totalTime; // Timer at each level
         private int timeLeft;
+
+        private float lastTime;
+        private float currentTime;
+        private float deltaTime;
 
         private bool paused = false;
 
-        public int mapPixelSize;
+        public int mapPixelSize = GameSettings.CellSize * GameSettings.MapSize;
         public int offsetX;
         public int offsetY;
 
@@ -44,46 +48,47 @@ namespace The_Rustwood_Outlaw
             this.difficulty.DataSource = Enum.GetValues(typeof(Difficulty));
             this.difficulty.SelectedIndex = (int)GameSettings.difficulty;
             MainMenu.Visible = true;
+
+            offsetX = (ClientSize.Width - mapPixelSize) / 2;
+            offsetY = (ClientSize.Height - mapPixelSize) / 2;
+
+
+            LoadLevels(); // Load the levels into memory
         }
 
 
         private void Startgame()
         {
-            this.KeyDown += Form1_KeyDown;
+            this.KeyDown += Form1_KeyDown; // Key press handeling
             this.KeyUp += Form1_KeyUp;
-            int mapPixelSize = GameSettings.CellSize * GameSettings.MapSize;
 
-            offsetX = (ClientSize.Width - mapPixelSize) / 2;
-            offsetY = (ClientSize.Height - mapPixelSize) / 2;
-
+            // Start timer for gameloop
             gameTimer.Interval = 1000 / GameSettings.RefreshRate;
             gameTimer.Tick += GameLoop;
-
             gameTimer.Tick += levelTimer;
 
-            // Start countdown
-            timeLeft = totalTime;
             gameTimer.Start();
 
-            LoadLevels();
             level = 0;
+            lastTime = Environment.TickCount / 1000f;
 
             LoadMap(this, level);
         }
 
         private void GameLoop(object sender, EventArgs e)
         {
-            float deltaTime = 1.0f / GameSettings.RefreshRate;
+            currentTime = Environment.TickCount / 1000f;
+            deltaTime = lastTime > 0 ? currentTime - lastTime : 1.0f / GameSettings.RefreshRate;
+            lastTime = currentTime;
 
             foreach (var entity in entities.ToList())
             {
-                if (entity.IsDestroyed) 
-                { 
+                if (entity.IsDestroyed)
+                {
                     entity.Destroy();
                     continue;
                 }
                 entity.Update(deltaTime);
-                
             }
 
             foreach (var spawnArea in spawnAreas.ToList())
@@ -99,12 +104,11 @@ namespace The_Rustwood_Outlaw
             DrawHearts();
             lScore.Text = $"Score: {score}";
             Background.SendToBack();
-
         }
 
         private void levelTimer(object sender, EventArgs e)
         {
-            timeLeft -= 1000 / GameSettings.RefreshRate;
+            timeLeft -= (int)(1000*deltaTime); // decrease the timeleft
             if (timeLeft >= 0)
             {
                 progressBar1.Value = timeLeft;
@@ -120,10 +124,9 @@ namespace The_Rustwood_Outlaw
             }
         }
 
-
         public static void LoadLevels()
         {
-            var lines = Properties.Resources.levels.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+            var lines = Properties.Resources.levels.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None); // Split the string by newlines
             int i = 0;
             while (i < lines.Length)
             {
@@ -157,12 +160,11 @@ namespace The_Rustwood_Outlaw
             }
         }
 
-
         public void LoadMap(Board board, int levelIndex)
         {
             int MapSize = GameSettings.MapSize;
             int multiplier = 1;
-            if (levelIndex >= levels.Count)
+            if (levelIndex >= levels.Count) // Used for endless maps
             {
                 multiplier = levelIndex - levels.Count + 1;
                 levelIndex = levels.Count-1;
@@ -173,7 +175,7 @@ namespace The_Rustwood_Outlaw
             board.timeLeft = level.Time * multiplier;
 
             progressBar1.Maximum = totalTime;
-            progressBar1.Value = totalTime;
+            progressBar1.Value = totalTime; // Set the progress bar at the top to the correct time
 
             int cellSize = GameSettings.CellSize;
 
@@ -184,7 +186,6 @@ namespace The_Rustwood_Outlaw
                 {
                     char tile = line[x];
                     Point position = new Point(offsetX + x * cellSize, offsetY + y * cellSize);
-                    Size size = new Size(cellSize, cellSize);
 
                     switch (tile)
                     {
@@ -196,62 +197,15 @@ namespace The_Rustwood_Outlaw
                             }
                         case 'p':
                             {
-                                PictureBox sprite = new PictureBox
-                                {
-                                    Size = size,
-                                    Location = position,
-                                    BackColor = Color.Transparent
-                                };
-                                sprite.Image = new Bitmap(Properties.Resources.front_player_1, GameSettings.SpriteSize);
-                                board.Controls.Add(sprite);
-
-                                Bitmap[] framesUp = new Bitmap[]
-                                {
-                                    new Bitmap(Properties.Resources.back_player_1, GameSettings.SpriteSize),
-                                    new Bitmap(Properties.Resources.back_player_2, GameSettings.SpriteSize)
-                                };
-
-                                Bitmap[] framesDown = new Bitmap[]
-                                {
-                                    new Bitmap(Properties.Resources.front_player_1, GameSettings.SpriteSize),
-                                    new Bitmap(Properties.Resources.front_player_2, GameSettings.SpriteSize)
-                                };
-
                                 player = new Player(GameSettings.PlayerSpeed, GameSettings.PlayerHealth,
-                                                           GameSettings.PlayerDamage, sprite, position, pressedKeys, this, framesUp, framesDown);
+                                                           GameSettings.PlayerDamage, position, pressedKeys, this);
                                 entities.Add(player);
                                 break;
                             }
                         case 'e':
                             {
-                                PictureBox sprite = new PictureBox
-                                {
-                                    Size = size,
-                                    Location = position,
-                                    BackColor = Color.Transparent
-                                };
-
-
-
-                                Bitmap[] framesRight;
-                                Bitmap[] framesLeft;
-                                framesRight = new Bitmap[]
-                                {
-                                new Bitmap(Properties.Resources.green_slime_1, GameSettings.SpriteSize),
-                                new Bitmap(Properties.Resources.green_slime_2, GameSettings.SpriteSize),
-                                new Bitmap(Properties.Resources.green_slime_3, GameSettings.SpriteSize)};
-                                
-                                framesLeft = new Bitmap[]
-                                {
-                                new Bitmap(Properties.Resources.green_slime_4, GameSettings.SpriteSize),
-                                new Bitmap(Properties.Resources.green_slime_5, GameSettings.SpriteSize),
-                                new Bitmap(Properties.Resources.green_slime_6, GameSettings.SpriteSize)};
-
-                                sprite.Image = framesRight[0];
-                                board.Controls.Add(sprite);
-
                                 Enemy enemy = new Enemy(GameSettings.EnemySpeed, GameSettings.EnemyHealth,
-                                                           GameSettings.EnemyDamage, sprite, position, this, framesLeft, framesRight);
+                                                           GameSettings.EnemyDamage, position, this);
                                 entities.Add(enemy);
                                 break;
                             }
@@ -327,6 +281,7 @@ namespace The_Rustwood_Outlaw
             }
             paused = !paused;
             Pause.Visible = false;
+            lastTime = Environment.TickCount / 1000f;
             gameTimer.Start();
         }
 
@@ -336,9 +291,8 @@ namespace The_Rustwood_Outlaw
             if (player.health == lastDrawnHearts) return;
 
             panelHearts.Controls.Clear();
-            int heartWidth = 16;
-            int spacing = 1;
-            int totalWidth = player.health * heartWidth + Math.Max(0, player.health - 1) * spacing;
+            int heartWidth = GameSettings.CellSize / 2;
+            int totalWidth = player.health * heartWidth + Math.Max(0, player.health - 1);
             panelHearts.Width = totalWidth;
 
             for (int i = 0; i < player.health; i++)
@@ -348,7 +302,7 @@ namespace The_Rustwood_Outlaw
                     Image = Properties.Resources.heart,
                     SizeMode = PictureBoxSizeMode.StretchImage,
                     Size = new Size(heartWidth, heartWidth),
-                    Location = new Point(i * (heartWidth + spacing), 0),
+                    Location = new Point(i * (heartWidth + 1), 0),
                     BackColor = Color.Transparent
                 };
                 panelHearts.Controls.Add(heart);

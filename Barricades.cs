@@ -27,7 +27,7 @@ namespace The_Rustwood_Outlaw
             this.size = new Size(GameSettings.CellSize, GameSettings.CellSize);
 
             sprite = new PictureBox();
-            sprite.BackColor = Color.SaddleBrown; // placeholder color
+            sprite.BackColor = Color.SaddleBrown;
             sprite.Size = size;
             sprite.Location = position;
             sprite.Image = new Bitmap(Properties.Resources.barricade, GameSettings.SpriteSize);
@@ -75,56 +75,19 @@ namespace The_Rustwood_Outlaw
                 bool succesfulSpawn = (1 == random.Next(1, (int)(1/GameSettings.enemySpawnChance+1)));
                 if (succesfulSpawn)
                 {
-                    // Náhodně vyber barvu slima
+                    // Randomly choose the slime coor (green or red)
                     bool green = random.Next(2) == 0;
+                    string color = "";
+                    if (green) color = "Green slime";
 
-                    Bitmap[] framesRight;
-                    Bitmap[] framesLeft;
-                    if (green)
-                    {
-                        framesRight = new Bitmap[]
-                        {
-                        new Bitmap(Properties.Resources.green_slime_1, GameSettings.SpriteSize),
-                        new Bitmap(Properties.Resources.green_slime_2, GameSettings.SpriteSize),
-                        new Bitmap(Properties.Resources.green_slime_3, GameSettings.SpriteSize)};
-                        framesLeft = new Bitmap[]
-                        {
-                        new Bitmap(Properties.Resources.green_slime_4, GameSettings.SpriteSize),
-                        new Bitmap(Properties.Resources.green_slime_5, GameSettings.SpriteSize),
-                        new Bitmap(Properties.Resources.green_slime_6, GameSettings.SpriteSize)};
-                    }
-                    else
-                    {
-                        framesRight = new Bitmap[]
-                        {
-                        new Bitmap(Properties.Resources.red_slime_1, GameSettings.SpriteSize),
-                        new Bitmap(Properties.Resources.red_slime_2, GameSettings.SpriteSize),
-                        new Bitmap(Properties.Resources.red_slime_3, GameSettings.SpriteSize)};
-                        framesLeft = new Bitmap[]
-                        {
-                        new Bitmap(Properties.Resources.red_slime_4, GameSettings.SpriteSize),
-                        new Bitmap(Properties.Resources.red_slime_5, GameSettings.SpriteSize),
-                        new Bitmap(Properties.Resources.red_slime_6, GameSettings.SpriteSize)};
-                    }
-
-                    PictureBox sprite = new PictureBox
-                    {
-                        Size = size,
-                        Location = position,
-                        BackColor = Color.Transparent,
-                        Image = framesRight[0]
-                    };
-                    board.Controls.Add(sprite);
 
                     var slime = new Enemy(
                         GameSettings.EnemySpeed,
                         GameSettings.EnemyHealth,
                         GameSettings.EnemyDamage,
-                        sprite,
                         position,
                         board,
-                        framesLeft, 
-                        framesRight
+                        color
                     );
                     board.entities.Add(slime);
                 }

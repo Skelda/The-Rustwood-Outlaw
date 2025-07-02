@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 using The_Rustwood_Outlaw.Properties;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
@@ -21,12 +22,11 @@ namespace The_Rustwood_Outlaw
         public List<Entity> entities;
         public bool IsDestroyed = false;
 
-        public Entity(int speed, int health, int damage, PictureBox sprite, Point position, Board board)
+        public Entity(int speed, int health, int damage, Point position, Board board)
         {
             this.speed = speed;
             this.health = health;
             this.damage = damage;
-            this.sprite = sprite;
             this.position = position;
             this.board = board;
             this.obstacles = board.barricades;
@@ -48,7 +48,7 @@ namespace The_Rustwood_Outlaw
         protected virtual bool CollidesAt(int x, int y)
         {
             Point testPos = new Point(x, y);
-            Rectangle testRect = new Rectangle(testPos, sprite.Size);
+            Rectangle testRect = new Rectangle(testPos, sprite.Size); // If any two rectangles interact at (x,y) there is a collision
             bool collision = obstacles.Any(b => b.Bounds.IntersectsWith(testRect)) ||
                                      entities.Any(e => (!object.ReferenceEquals(e, this) &&
                                                          e.Bounds.IntersectsWith(testRect)));
@@ -59,19 +59,17 @@ namespace The_Rustwood_Outlaw
         {
             Point newPos = position;
 
-            // Pohyb po ose X
             if (dx != 0)
             {
                 int stepX = Math.Sign(dx);
                 for (int i = 1; i <= Math.Abs(dx); i++)
                 {
-                    if (CollidesAt(newPos.X + stepX, newPos.Y))
+                    if (CollidesAt(newPos.X + stepX, newPos.Y)) // Gradually tries to move in the right x direction
                         break;
                     newPos.X += stepX;
                 }
             }
 
-            // Pohyb po ose Y
             if (dy != 0)
             {
                 int stepY = Math.Sign(dy);
@@ -86,7 +84,7 @@ namespace The_Rustwood_Outlaw
             return newPos;
         }
 
-        public virtual void Draw()
+        protected virtual void Draw()
         {
             if (!board.Controls.Contains(sprite))
             {
@@ -99,13 +97,13 @@ namespace The_Rustwood_Outlaw
 
 
 
-        public virtual void Move(float deltaTime)
+        protected virtual void Move(float deltaTime)
         {
             
         }
 
 
-        public Rectangle Bounds => new Rectangle(position, sprite.Size);
+        public Rectangle Bounds => new Rectangle(position, sprite.Size); // Call Bounds to get the current hitbox of the entity
 
         public virtual void Destroy()
         {
@@ -123,7 +121,7 @@ namespace The_Rustwood_Outlaw
         private Bitmap[] framesDown;
         private int currentFrame = 0;
         private float animationTimer = 0f;
-        private float animationSpeed = 0.12f;
+        private float animationSpeed = GameSettings.animationSpeed;
         private bool facingDown = true;
 
 
@@ -138,12 +136,31 @@ namespace The_Rustwood_Outlaw
 
         public bool multishot = false;
 
-        public Player(int speed, int health, int damage, PictureBox sprite, Point position, HashSet<Keys> keys, Board board, Bitmap[] framesUp, Bitmap[] framesDown)
-        : base(speed, health, damage, sprite, position, board)
+        public Player(int speed, int health, int damage, Point position, HashSet<Keys> keys, Board board)
+        : base(speed, health, damage, position, board)
         {
-            this.framesUp = framesUp;
-            this.framesDown = framesDown;
             this.pressedKeys = keys;
+
+            sprite = new PictureBox
+            {
+                Size = new Size(GameSettings.CellSize, GameSettings.CellSize),
+                Location = position,
+                BackColor = Color.Transparent
+            };
+            sprite.Image = new Bitmap(Properties.Resources.front_player_1, GameSettings.SpriteSize);
+            board.Controls.Add(sprite);
+
+            framesUp = new Bitmap[]
+            {
+                                    new Bitmap(Properties.Resources.back_player_1, GameSettings.SpriteSize),
+                                    new Bitmap(Properties.Resources.back_player_2, GameSettings.SpriteSize)
+            };
+
+            framesDown = new Bitmap[]
+            {
+                                    new Bitmap(Properties.Resources.front_player_1, GameSettings.SpriteSize),
+                                    new Bitmap(Properties.Resources.front_player_2, GameSettings.SpriteSize)
+            };
         }
 
         public override void Update(float deltaTime)
@@ -164,9 +181,7 @@ namespace The_Rustwood_Outlaw
         {
             Point testPos = new Point(x, y);
             Rectangle testRect = new Rectangle(testPos, sprite.Size);
-            bool collision = obstacles.Any(b => b.Bounds.IntersectsWith(testRect)) ||
-                             entities.Any(e => (!object.ReferenceEquals(e, this) &&
-                                                         e.Bounds.IntersectsWith(testRect))) ||
+            bool collision = base.CollidesAt(x,y) ||
                              board.spawnAreas.Any(a => a.Bounds.IntersectsWith(testRect));
             return collision;
         }
@@ -194,7 +209,7 @@ namespace The_Rustwood_Outlaw
             }
         }
 
-        public override void Move(float deltaTime) 
+        protected override void Move(float deltaTime) 
         {
             bool up = pressedKeys.Contains(Keys.W);
             bool down = pressedKeys.Contains(Keys.S);
@@ -251,14 +266,14 @@ namespace The_Rustwood_Outlaw
                     for (int ddy = -1; ddy < 2; ddy++)
                     {
                         if (ddx == 0 && ddy == 0) continue;
-                        entities.Add(new Bullet(GameSettings.BulletSpeed, GameSettings.BulletHealth, this.damage, sprite, position, board, ddx, ddy));
+                        entities.Add(new Bullet(GameSettings.BulletSpeed, GameSettings.BulletHealth, this.damage, position, board, ddx, ddy));
                     }
                 }
             }
 
             else
             {
-                entities.Add(new Bullet(GameSettings.BulletSpeed, GameSettings.BulletHealth, this.damage, sprite, position, board, dx, dy));
+                entities.Add(new Bullet(GameSettings.BulletSpeed, GameSettings.BulletHealth, this.damage, position, board, dx, dy));
             }
 
             shootCooldown = shootDelay;
@@ -273,7 +288,7 @@ namespace The_Rustwood_Outlaw
         private Bitmap[] framesRight;
         private int currentFrame = 0;
         private float animationTimer = 0f;
-        private float animationSpeed = 0.12f;
+        private float animationSpeed = GameSettings.animationSpeed;
         private bool facingRight = true;
 
 
@@ -286,11 +301,44 @@ namespace The_Rustwood_Outlaw
 
         private List<PictureBox> pathBoxes = new List<PictureBox>();
 
-        public Enemy(int speed, int health, int damage, PictureBox sprite, Point position, Board board, Bitmap[] framesLeft, Bitmap[] framesRight)
-        : base(speed, health, damage, sprite, position, board)
+        public Enemy(int speed, int health, int damage, Point position, Board board, string type="Green slime")
+        : base(speed, health, damage, position, board)
         {
-            this.framesLeft = framesLeft;
-            this.framesRight = framesRight;
+            if (type=="Green slime") // Load the correct sprites - either a green or red slime
+            {
+                framesRight = new Bitmap[]
+                {
+                        new Bitmap(Properties.Resources.green_slime_1, GameSettings.SpriteSize),
+                        new Bitmap(Properties.Resources.green_slime_2, GameSettings.SpriteSize),
+                        new Bitmap(Properties.Resources.green_slime_3, GameSettings.SpriteSize)};
+                framesLeft = new Bitmap[]
+                {
+                        new Bitmap(Properties.Resources.green_slime_4, GameSettings.SpriteSize),
+                        new Bitmap(Properties.Resources.green_slime_5, GameSettings.SpriteSize),
+                        new Bitmap(Properties.Resources.green_slime_6, GameSettings.SpriteSize)};
+            }
+            else
+            {
+                framesRight = new Bitmap[]
+                {
+                        new Bitmap(Properties.Resources.red_slime_1, GameSettings.SpriteSize),
+                        new Bitmap(Properties.Resources.red_slime_2, GameSettings.SpriteSize),
+                        new Bitmap(Properties.Resources.red_slime_3, GameSettings.SpriteSize)};
+                framesLeft = new Bitmap[]
+                {
+                        new Bitmap(Properties.Resources.red_slime_4, GameSettings.SpriteSize),
+                        new Bitmap(Properties.Resources.red_slime_5, GameSettings.SpriteSize),
+                        new Bitmap(Properties.Resources.red_slime_6, GameSettings.SpriteSize)};
+            }
+
+            sprite = new PictureBox
+            {
+                Size = new Size(GameSettings.CellSize, GameSettings.CellSize),
+                Location = position,
+                BackColor = Color.Transparent,
+                Image = framesRight[0]
+            };
+            board.Controls.Add(sprite);
         }
 
         public override void Update(float deltaTime)
@@ -320,26 +368,28 @@ namespace The_Rustwood_Outlaw
             Point gridGoal = RoundPointToGrid(goal);
 
             if (lastPath != null && lastStart == gridStart && lastGoal == gridGoal && lastPathIndex < lastPath.Count - 1)
+                // If last path exists, last start and goal and this start and goal match and it is not the last step of the path:
             {
-                lastPathIndex++;
+                lastPathIndex++; // Next step of the path
                 Point next = lastPath[lastPathIndex];
-                return (Math.Sign(next.X - gridStart.X), Math.Sign(next.Y - gridStart.Y));
+                return (Math.Sign(next.X - gridStart.X), Math.Sign(next.Y - gridStart.Y)); // Return the next step in the path
             }
 
             var cacheKey = (gridStart, gridGoal);
             if (pathCache.TryGetValue(cacheKey, out var cachedPath) && cachedPath.Count > 1)
+                // If this start and this goal are in pathCahce get it
             {
-                lastPath = cachedPath;
+                lastPath = cachedPath; 
                 lastStart = gridStart;
                 lastGoal = gridGoal;
                 lastPathIndex = 1;
                 Point next = lastPath[lastPathIndex];
-                return (Math.Sign(next.X - gridStart.X), Math.Sign(next.Y - gridStart.Y));
+                return (Math.Sign(next.X - gridStart.X), Math.Sign(next.Y - gridStart.Y)); // Return the first step of the cached path
             }
 
-            var prevFromStart = new Dictionary<Point, Point>();
+            var prevFromStart = new Dictionary<Point, Point>(); // For BFS to reconstruct the path
             var prevFromGoal = new Dictionary<Point, Point>();
-            var queueStart = new Queue<Point>();
+            var queueStart = new Queue<Point>(); // Queue for BFS
             var queueGoal = new Queue<Point>();
             var visitedStart = new HashSet<Point>();
             var visitedGoal = new HashSet<Point>();
@@ -351,20 +401,18 @@ namespace The_Rustwood_Outlaw
 
             Point? meetPoint = null;
 
-            int[] dxx = { 0, 0, -1, 1, -1, -1, 1, 1 };
-            int[] dyy = { -1, 1, 0, 0, -1, 1, -1, 1 };
 
-            while (queueStart.Count > 0 && queueGoal.Count > 0)
+            while (queueStart.Count > 0 && queueGoal.Count > 0) // BFS where the "wave" expands from both the start and the goal
             {
-                if (Expand(queueStart, visitedStart, visitedGoal, prevFromStart, prevFromGoal, out meetPoint, dxx, dyy)) break;
-                if (Expand(queueGoal, visitedGoal, visitedStart, prevFromGoal, prevFromStart, out meetPoint, dxx, dyy)) break;
+                if (Expand(queueStart, visitedStart, visitedGoal, prevFromStart, prevFromGoal, out meetPoint)) break; // If the meetpoint is found, break out from the loop
+                if (Expand(queueGoal, visitedGoal, visitedStart, prevFromGoal, prevFromStart, out meetPoint)) break;
             }
 
             if (meetPoint != null)
             {
                 var path = new List<Point>();
                 Point p = meetPoint.Value;
-                while (p != gridStart)
+                while (p != gridStart) // Reconstruct the path from meetpoint to the start
                 {
                     path.Add(p);
                     p = prevFromStart[p];
@@ -372,22 +420,22 @@ namespace The_Rustwood_Outlaw
                 path.Add(gridStart);
                 path.Reverse();
 
-                if (prevFromGoal.ContainsKey(meetPoint.Value))
+                if (prevFromGoal.ContainsKey(meetPoint.Value)) // If meetpoint has been found by the BFS from goal
                 {
                     p = prevFromGoal[meetPoint.Value];
-                    while (p != gridGoal)
+                    while (p != gridGoal) // Reconstruct the path from meetpoint to the goal
                     {
                         path.Add(p);
                         p = prevFromGoal[p];
                     }
                     path.Add(gridGoal);
                 }
-                else
+                else // Else the path has length 0 and the only step is the gridGoal
                 {
                     path.Add(gridGoal);
                 }
 
-                pathCache[cacheKey] = path;
+                pathCache[cacheKey] = path; // Cache the path (also could be cached globally in the board and reset at each level)
                 lastPath = path;
                 lastStart = gridStart;
                 lastGoal = gridGoal;
@@ -395,35 +443,33 @@ namespace The_Rustwood_Outlaw
                 if (path.Count > 1)
                 {
                     Point next = path[1];
-                    return (Math.Sign(next.X - gridStart.X), Math.Sign(next.Y - gridStart.Y));
+                    return (Math.Sign(next.X - gridStart.X), Math.Sign(next.Y - gridStart.Y)); // Return the next step in the path
                 }
             }
 
 
-            lastPath = null;
+            lastPath = null; // If no path has been found return (0.0) for no next step
             return (0, 0);
         }
 
-        private bool Expand(
-            Queue<Point> queue,
-            HashSet<Point> visitedThis,
-            HashSet<Point> visitedOther,
-            Dictionary<Point, Point> prevThis,
-            Dictionary<Point, Point> prevOther,
-            out Point? meetPoint,
-            int[] dxx, int[] dyy)
+        private bool Expand(Queue<Point> queue, HashSet<Point> visitedThis, HashSet<Point> visitedOther, 
+            Dictionary<Point, Point> prevThis,Dictionary<Point, Point> prevOther,out Point? meetPoint)
+            // Clasic BFS logic without the loop, but in a function so it can be called twice per iteration
         {
+
             meetPoint = null;
             if (queue.Count == 0) return false;
             Point current = queue.Dequeue();
-            for (int dir = 0; dir < 8; dir++)
+
+            int[] dxx = { 0, 0, -1, 1, -1, -1, 1, 1 }; // Is used instead of two loops
+            int[] dyy = { -1, 1, 0, 0, -1, 1, -1, 1 }; // Is used instead of two loops
+
+            for (int dir = 0; dir < 8; dir++) // Check all neighbours
             {
                 int nx = current.X + dxx[dir];
                 int ny = current.Y + dyy[dir];
                 Point next = new Point(nx, ny);
-                Rectangle testRect = new Rectangle(GridToCoords(next), sprite.Size);
-                bool collision = obstacles.Any(b => b.Bounds.IntersectsWith(testRect)) || board.spawnAreas.Any(b => b.Bounds.IntersectsWith(testRect));
-                if (collision) continue;
+                if (CollidesAt(nx, ny)) continue;
                 if (!visitedThis.Contains(next))
                 {
                     visitedThis.Add(next);
@@ -440,25 +486,24 @@ namespace The_Rustwood_Outlaw
         }
 
 
-        public override void Move(float deltaTime)
+        protected override void Move(float deltaTime)
         {
-            var (dx, dy) = PathFinding(board.player.position);
+            var (dx, dy) = PathFinding(board.player.position); // Find the next step
 
-            if (dx < 0) facingRight = false;
+            if (dx < 0) facingRight = false; // Useed for animating the enemy
             else if (dx > 0) facingRight = true;
 
             float moveAmount = speed * deltaTime;
-            float diagonalFactor = GameSettings.diagonalMove;
 
             bool isDiagonal = dx != 0 && dy != 0;
-            float factor = isDiagonal ? diagonalFactor : 1.0f;
-            dx *= (int)(moveAmount * factor);
+            float factor = isDiagonal ? GameSettings.diagonalMove : 1.0f;
+            dx *= (int)(moveAmount * factor); // Convert direction into number of pixels
             dy *= (int)(moveAmount * factor);
 
             Point testPos = new Point(position.X+dx, position.Y+dy);
             Rectangle testRect = new Rectangle(testPos, sprite.Size);
 
-            if (testRect.IntersectsWith(board.player.Bounds)) 
+            if (testRect.IntersectsWith(board.player.Bounds)) // Check if enemy can hit the player
             {
                 board.player.health--;
                 IsDestroyed = true;
@@ -470,6 +515,7 @@ namespace The_Rustwood_Outlaw
         }
 
         private Point RoundPointToGrid(Point coords)
+            // Converts the position in pixels into a position on a board
         {
             Point new_coords = new Point();
             new_coords.X = (coords.X - board.offsetX) / GameSettings.CellSize;
@@ -477,15 +523,7 @@ namespace The_Rustwood_Outlaw
             return new_coords;
         }
 
-        private Point GridToCoords(Point coords)
-        {
-            Point new_coords = new Point();
-            new_coords.X = coords.X * GameSettings.CellSize + board.offsetX;
-            new_coords.Y = coords.Y * GameSettings.CellSize + board.offsetY;
-            return new_coords;
-        }
-
-        public void TryDropItem()
+        private void TryDropItem()
         {
             Random rnd = new Random();
             int chance = rnd.Next(0, 100);
@@ -504,8 +542,8 @@ namespace The_Rustwood_Outlaw
         float fx, fy;
         float fdx, fdy;
 
-        public Bullet(int speed, int health, int damage, PictureBox sprite, Point position, Board board, int dx, int dy)
-            : base(speed, health, damage, sprite, position, board)
+        public Bullet(int speed, int health, int damage, Point position, Board board, int dx, int dy)
+            : base(speed, health, damage, position, board)
         {
             position = new Point(position.X + 20 * dx, position.Y + 20 * dy);
 
@@ -513,7 +551,8 @@ namespace The_Rustwood_Outlaw
             RotateFlipType rt = RotateFlipType.RotateNoneFlipNone;
             Size bulletSize = GameSettings.BulletSize;
 
-            if (dy == -1) rt = RotateFlipType.RotateNoneFlipNone;
+            // Flip the sprite if need
+            if (dy == -1) rt = RotateFlipType.RotateNoneFlipNone; 
             else if (dy == 1) rt = RotateFlipType.Rotate180FlipNone; 
             if (dx == -1) {rt = RotateFlipType.Rotate270FlipNone; bulletSize = new Size(bulletSize.Height, bulletSize.Width); }
             else if (dx == 1) {rt = RotateFlipType.Rotate90FlipNone; bulletSize = new Size(bulletSize.Height, bulletSize.Width); }
@@ -525,7 +564,6 @@ namespace The_Rustwood_Outlaw
                 BackColor = Color.Transparent
             };
 
-            // Nejprve změňte velikost, pak rotujte
             Bitmap bulletImage = new Bitmap(Resources.bullet);
             bulletImage.RotateFlip(rt);
             this.sprite.Image = new Bitmap(bulletImage, bulletSize);
@@ -539,7 +577,7 @@ namespace The_Rustwood_Outlaw
             else { fdx = dx / len; fdy = dy / len; }
         }
 
-        public override void Move(float deltaTime)
+        protected override void Move(float deltaTime)
         {
             float moveAmount = speed * deltaTime;
             fx += fdx * moveAmount;

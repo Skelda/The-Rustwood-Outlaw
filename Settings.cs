@@ -24,28 +24,29 @@ namespace The_Rustwood_Outlaw
             { Difficulty.Hard, 1f / 2f },
             { Difficulty.Impossible, 1f }
         };
-        public static int RefreshRate = 60;
-        public static float diagonalMove = 0.707107f;
-        public static int MapSize = 21;
-        public static int CellSize = 32;
+        public const int RefreshRate = 120;
+        public const float diagonalMove = 0.707107f;
+        public const int MapSize = 21;
+        public const int CellSize = 32;
         public static Size SpriteSize = new Size(CellSize , CellSize);
         public static Size BulletSize = new Size(CellSize / 4, CellSize / 2);
-        public static int PlayerSpeed = 500;
-        public static int PlayerHealth = 3;
-        public static int PlayerDamage = 1;
-        public static float PlayerShootingSpeed = 0.10f;
-        public static int EnemySpeed = 200;
-        public static int EnemyDamage = 1;
-        public static int EnemyHealth = 2;
-        public static int BulletSpeed = 750;
-        public static int BulletHealth = 1;
-        public static int itemDropChance = 10;
+        public const int PlayerSpeed = 250;
+        public const int PlayerHealth = 3;
+        public const int PlayerDamage = 1;
+        public const float PlayerShootingSpeed = 0.25f;
+        public const int EnemySpeed = 100;
+        public const int EnemyDamage = 1;
+        public const int EnemyHealth = 2;
+        public const int BulletSpeed = 350;
+        public const int BulletHealth = 1;
+        public const int itemDropChance = 10;
         public static Difficulty difficulty = Difficulty.Normal;
         public static float enemySpawnChance = DifficultySpawnChances[difficulty];
-        public static float speedBoostTime = 5f;
-        public static float fireRateTime = 5f;
-        public static float damageRateTime = 5f;
-        public static float multishotTime = 5f;
-        public static float itemOnGroundTime = 5f;
+        public const float speedBoostTime = 5f;
+        public const float fireRateTime = 5f;
+        public const float damageRateTime = 5f;
+        public const float multishotTime = 5f;
+        public const float itemOnGroundTime = 5f;
+        public const float animationSpeed = 0.12f;
     }
 }
