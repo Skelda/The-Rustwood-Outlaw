@@ -570,17 +570,32 @@ namespace The_Rustwood_Outlaw
         public Bullet(int speed, int health, int damage, Point position, Board board, int dx, int dy)
             : base(speed, health, damage, position, board)
         {
-            position = new Point(position.X + 20 * dx, position.Y + 20 * dy);
+            // Vypočítat střed hráče
+            int centerX = position.X + GameSettings.CellSize / 2;
+            int centerY = position.Y + GameSettings.CellSize / 2;
 
+            // Vypočítat offset (10 pixelů ve směru střelby)
+            int offsetX = 0, offsetY = 0;
+            if (dx != 0 || dy != 0)
+            {
+                // Normalizace směru
+                double len = Math.Sqrt(dx * dx + dy * dy);
+                offsetX = (int)Math.Round(dx / len * (GameSettings.BulletOffset + GameSettings.CellSize / 2));
+                offsetY = (int)Math.Round(dy / len * (GameSettings.BulletOffset + GameSettings.CellSize / 2));
+            }
+
+            // Nová pozice střely
+            position = new Point(centerX + offsetX - GameSettings.BulletSize.Width / 2,
+                                 centerY + offsetY - GameSettings.BulletSize.Height / 2);
 
             RotateFlipType rt = RotateFlipType.RotateNoneFlipNone;
             Size bulletSize = GameSettings.BulletSize;
 
             // Flip the sprite if need
-            if (dy == -1) rt = RotateFlipType.RotateNoneFlipNone; 
-            else if (dy == 1) rt = RotateFlipType.Rotate180FlipNone; 
-            if (dx == -1) {rt = RotateFlipType.Rotate270FlipNone; bulletSize = new Size(bulletSize.Height, bulletSize.Width); }
-            else if (dx == 1) {rt = RotateFlipType.Rotate90FlipNone; bulletSize = new Size(bulletSize.Height, bulletSize.Width); }
+            if (dy == -1) rt = RotateFlipType.RotateNoneFlipNone;
+            else if (dy == 1) rt = RotateFlipType.Rotate180FlipNone;
+            if (dx == -1) { rt = RotateFlipType.Rotate270FlipNone; bulletSize = new Size(bulletSize.Height, bulletSize.Width); }
+            else if (dx == 1) { rt = RotateFlipType.Rotate90FlipNone; bulletSize = new Size(bulletSize.Height, bulletSize.Width); }
 
             this.sprite = new PictureBox
             {
@@ -597,9 +612,9 @@ namespace The_Rustwood_Outlaw
 
             fx = position.X;
             fy = position.Y;
-            float len = (float)Math.Sqrt(dx * dx + dy * dy);
-            if (len == 0) { fdx = 0; fdy = 0; }
-            else { fdx = dx / len; fdy = dy / len; }
+            float lenVec = (float)Math.Sqrt(dx * dx + dy * dy);
+            if (lenVec == 0) { fdx = 0; fdy = 0; }
+            else { fdx = dx / lenVec; fdy = dy / lenVec; }
         }
 
         protected override void Move(float deltaTime)

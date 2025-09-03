@@ -39,6 +39,7 @@ namespace The_Rustwood_Outlaw
         public const int EnemyHealth = 2;
         public const int BulletSpeed = 350;
         public const int BulletHealth = 1;
+        public const int BulletOffset = 30;
         public const int itemDropChance = 10;
         public static Difficulty difficulty = Difficulty.Normal;
         public static float enemySpawnChance = DifficultySpawnChances[difficulty];
