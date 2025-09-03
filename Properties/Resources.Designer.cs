@@ -241,7 +241,7 @@ namespace The_Rustwood_Outlaw.Properties {
         }
         
         /// <summary>
-        ///   Vyhledá lokalizovaný řetězec podobný Name:level1 Time:100000 SpawnRate:5000 Boss:0
+        ///   Vyhledá lokalizovaný řetězec podobný Name:level1 Time:50000 SpawnRate:5000 Boss:0
         ///xxxxxxxxxsssxxxxxxxxx
         ///x...................x
         ///x...................x
@@ -261,8 +261,8 @@ namespace The_Rustwood_Outlaw.Properties {
         ///x...................x
         ///x...................x
         ///x...................x
-        ///xe..................x
-        ///xxxxx [zbytek řetězce byl zkrácen];.
+        ///x...................x
+        ///xxxxxx [zbytek řetězce byl zkrácen];.
         /// </summary>
         internal static string levels {
             get {
