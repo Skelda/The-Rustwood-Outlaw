@@ -35,7 +35,7 @@ namespace The_Rustwood_Outlaw
         public const int PlayerDamage = 1;
         public const float PlayerShootingSpeed = 0.25f;
         public const int EnemySpeed = 125;
-        public const int EnemyDamage = 0;
+        public const int EnemyDamage = 1;
         public const int EnemyHealth = 2;
         public const int BulletSpeed = 500;
         public const int BulletHealth = 1;
