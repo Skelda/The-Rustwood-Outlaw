@@ -530,7 +530,7 @@ namespace The_Rustwood_Outlaw
 
             if (testRect.IntersectsWith(board.player.Bounds)) // Check if enemy can hit the player
             {
-                board.player.health--;
+                board.player.health -= damage;
                 IsDestroyed = true;
                 return;
             }

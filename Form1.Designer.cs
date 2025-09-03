@@ -50,6 +50,8 @@ namespace The_Rustwood_Outlaw
             this.lLostScreenLevel = new System.Windows.Forms.Label();
             this.playAgain = new System.Windows.Forms.Button();
             this.label2 = new System.Windows.Forms.Label();
+            this.l1 = new System.Windows.Forms.Label();
+            this.l2 = new System.Windows.Forms.Label();
             this.MainMenu.SuspendLayout();
             this.Pause.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.Background)).BeginInit();
@@ -270,12 +272,36 @@ namespace The_Rustwood_Outlaw
             this.label2.Text = "You lost";
             this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
+            // l1
+            // 
+            this.l1.AutoSize = true;
+            this.l1.Font = new System.Drawing.Font("Microsoft Sans Serif", 7F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
+            this.l1.ForeColor = System.Drawing.Color.MediumSpringGreen;
+            this.l1.Location = new System.Drawing.Point(817, 43);
+            this.l1.Name = "l1";
+            this.l1.Size = new System.Drawing.Size(62, 13);
+            this.l1.TabIndex = 8;
+            this.l1.Text = "FrameTimes";
+            // 
+            // l2
+            // 
+            this.l2.AutoSize = true;
+            this.l2.Font = new System.Drawing.Font("Microsoft Sans Serif", 7F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
+            this.l2.ForeColor = System.Drawing.Color.MediumSpringGreen;
+            this.l2.Location = new System.Drawing.Point(817, 56);
+            this.l2.Name = "l2";
+            this.l2.Size = new System.Drawing.Size(27, 13);
+            this.l2.TabIndex = 9;
+            this.l2.Text = "FPS";
+            // 
             // Board
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(50)))), ((int)(((byte)(0)))));
             this.ClientSize = new System.Drawing.Size(960, 780);
+            this.Controls.Add(this.l2);
+            this.Controls.Add(this.l1);
             this.Controls.Add(this.pYouLost);
             this.Controls.Add(this.panelHearts);
             this.Controls.Add(this.lHealth);
@@ -319,5 +345,7 @@ namespace The_Rustwood_Outlaw
         private System.Windows.Forms.Button playAgain;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label lLostScreenScore;
+        private System.Windows.Forms.Label l1;
+        private System.Windows.Forms.Label l2;
     }
 }

@@ -32,6 +32,7 @@ namespace The_Rustwood_Outlaw
         private int totalTime; // Timer at each level
         private int timeLeft;
 
+        private Stopwatch stopwatch = new Stopwatch();
         private float lastTime;
         private float currentTime;
         private float deltaTime;
@@ -42,6 +43,32 @@ namespace The_Rustwood_Outlaw
         public int offsetX;
         public int offsetY;
 
+
+
+
+        public class LimitedQueue<T> : Queue<T>
+        {
+            public int Limit { get; set; }
+
+            public LimitedQueue(int limit) : base(limit)
+            {
+                Limit = limit;
+            }
+
+            public new void Enqueue(T item)
+            {
+                while (Count >= Limit)
+                {
+                    Dequeue();
+                }
+                base.Enqueue(item);
+            }
+        }
+
+
+
+
+        private LimitedQueue<float> frames = new LimitedQueue<float>(20);
         public Board()
         {
             InitializeComponent();
@@ -70,16 +97,27 @@ namespace The_Rustwood_Outlaw
             gameTimer.Start();
 
             level = 0;
-            lastTime = Environment.TickCount / 1000f;
+
+            stopwatch.Restart();
+            lastTime = 0f;
 
             LoadMap(this, level);
         }
 
         private void GameLoop(object sender, EventArgs e)
         {
-            currentTime = Environment.TickCount / 1000f;
-            deltaTime = lastTime > 0 ? currentTime - lastTime : 1.0f / GameSettings.RefreshRate;
+            currentTime = (float)stopwatch.Elapsed.TotalSeconds;
+            deltaTime = Math.Abs(lastTime - currentTime);
             lastTime = currentTime;
+
+            frames.Enqueue(deltaTime);
+            float averageFrameTime = 0;
+            float fps = 0;
+            foreach (var frame in frames) averageFrameTime += frame;
+            averageFrameTime /= frames.Count;
+            fps = 1f / averageFrameTime;
+            l1.Text = $"FrameTime: {averageFrameTime:0.000} s";
+            l2.Text = $"FPS: {fps:00.0}";
 
             foreach (var entity in entities.ToList())
             {
@@ -104,6 +142,8 @@ namespace The_Rustwood_Outlaw
             DrawHearts();
             lScore.Text = $"Score: {score}";
             Background.SendToBack();
+            this.Invalidate(); // Mark as dirty
+            this.Update();     // Force immediate repaint
         }
 
         private void levelTimer(object sender, EventArgs e)
