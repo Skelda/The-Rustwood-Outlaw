@@ -34,10 +34,10 @@ namespace The_Rustwood_Outlaw
 
         }
 
-        public virtual void Update(float deltaTime) 
+        public virtual void Update(float deltaTime)
         {
-            if (this.health <= 0) 
-            { 
+            if (this.health <= 0)
+            {
                 IsDestroyed = true;
                 return;
             }
@@ -75,7 +75,7 @@ namespace The_Rustwood_Outlaw
                 int stepY = Math.Sign(dy);
                 for (int i = 1; i <= Math.Abs(dy); i++)
                 {
-                    if (CollidesAt(newPos.X, newPos.Y+ stepY))
+                    if (CollidesAt(newPos.X, newPos.Y + stepY))
                         break;
                     newPos.Y += stepY;
                 }
@@ -99,7 +99,7 @@ namespace The_Rustwood_Outlaw
 
         protected virtual void Move(float deltaTime)
         {
-            
+
         }
 
 
@@ -181,7 +181,7 @@ namespace The_Rustwood_Outlaw
         {
             Point testPos = new Point(x, y);
             Rectangle testRect = new Rectangle(testPos, sprite.Size);
-            bool collision = base.CollidesAt(x,y) ||
+            bool collision = base.CollidesAt(x, y) ||
                              board.spawnAreas.Any(a => a.Bounds.IntersectsWith(testRect));
             return collision;
         }
@@ -209,7 +209,7 @@ namespace The_Rustwood_Outlaw
             }
         }
 
-        protected override void Move(float deltaTime) 
+        protected override void Move(float deltaTime)
         {
             bool up = pressedKeys.Contains(Keys.W);
             bool down = pressedKeys.Contains(Keys.S);
@@ -281,6 +281,55 @@ namespace The_Rustwood_Outlaw
 
     }
 
+    public enum EnemyType
+    {
+        GreenSlime,
+        RedSlime
+    }
+
+    public static class EnemySpriteCache
+    {
+        public static Dictionary<EnemyType, Bitmap[]> LeftSprites { get; private set; }
+        public static Dictionary<EnemyType, Bitmap[]> RightSprites { get; private set; }
+
+        public static void Initialize()
+        {
+            LeftSprites = new Dictionary<EnemyType, Bitmap[]>
+            {
+                [EnemyType.GreenSlime] = new Bitmap[]
+                {
+                new Bitmap(Properties.Resources.green_slime_4, GameSettings.SpriteSize),
+                new Bitmap(Properties.Resources.green_slime_5, GameSettings.SpriteSize),
+                new Bitmap(Properties.Resources.green_slime_6, GameSettings.SpriteSize)
+                },
+                [EnemyType.RedSlime] = new Bitmap[]
+                {
+                new Bitmap(Properties.Resources.red_slime_4, GameSettings.SpriteSize),
+                new Bitmap(Properties.Resources.red_slime_5, GameSettings.SpriteSize),
+                new Bitmap(Properties.Resources.red_slime_6, GameSettings.SpriteSize)
+                }
+            };
+
+            RightSprites = new Dictionary<EnemyType, Bitmap[]>
+            {
+                [EnemyType.GreenSlime] = new Bitmap[]
+                {
+                new Bitmap(Properties.Resources.green_slime_1, GameSettings.SpriteSize),
+                new Bitmap(Properties.Resources.green_slime_2, GameSettings.SpriteSize),
+                new Bitmap(Properties.Resources.green_slime_3, GameSettings.SpriteSize)
+                },
+                [EnemyType.RedSlime] = new Bitmap[]
+                {
+                new Bitmap(Properties.Resources.red_slime_1, GameSettings.SpriteSize),
+                new Bitmap(Properties.Resources.red_slime_2, GameSettings.SpriteSize),
+                new Bitmap(Properties.Resources.red_slime_3, GameSettings.SpriteSize)
+                }
+            };
+        }
+
+        public static Bitmap[] GetSpritesLeft(EnemyType type) => LeftSprites[type];
+        public static Bitmap[] GetSpritesRight(EnemyType type) => RightSprites[type];
+    }
 
     public class Enemy : Entity
     {
@@ -301,35 +350,11 @@ namespace The_Rustwood_Outlaw
 
         private List<PictureBox> pathBoxes = new List<PictureBox>();
 
-        public Enemy(int speed, int health, int damage, Point position, Board board, string type="Green slime")
+        public Enemy(int speed, int health, int damage, Point position, Board board, EnemyType type=EnemyType.GreenSlime)
         : base(speed, health, damage, position, board)
         {
-            if (type=="Green slime") // Load the correct sprites - either a green or red slime
-            {
-                framesRight = new Bitmap[]
-                {
-                        new Bitmap(Properties.Resources.green_slime_1, GameSettings.SpriteSize),
-                        new Bitmap(Properties.Resources.green_slime_2, GameSettings.SpriteSize),
-                        new Bitmap(Properties.Resources.green_slime_3, GameSettings.SpriteSize)};
-                framesLeft = new Bitmap[]
-                {
-                        new Bitmap(Properties.Resources.green_slime_4, GameSettings.SpriteSize),
-                        new Bitmap(Properties.Resources.green_slime_5, GameSettings.SpriteSize),
-                        new Bitmap(Properties.Resources.green_slime_6, GameSettings.SpriteSize)};
-            }
-            else
-            {
-                framesRight = new Bitmap[]
-                {
-                        new Bitmap(Properties.Resources.red_slime_1, GameSettings.SpriteSize),
-                        new Bitmap(Properties.Resources.red_slime_2, GameSettings.SpriteSize),
-                        new Bitmap(Properties.Resources.red_slime_3, GameSettings.SpriteSize)};
-                framesLeft = new Bitmap[]
-                {
-                        new Bitmap(Properties.Resources.red_slime_4, GameSettings.SpriteSize),
-                        new Bitmap(Properties.Resources.red_slime_5, GameSettings.SpriteSize),
-                        new Bitmap(Properties.Resources.red_slime_6, GameSettings.SpriteSize)};
-            }
+            framesLeft = EnemySpriteCache.GetSpritesLeft(type);
+            framesRight = EnemySpriteCache.GetSpritesRight(type);
 
             sprite = new PictureBox
             {

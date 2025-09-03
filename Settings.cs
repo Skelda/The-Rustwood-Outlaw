@@ -24,7 +24,7 @@ namespace The_Rustwood_Outlaw
             { Difficulty.Hard, 1f / 2f },
             { Difficulty.Impossible, 1f }
         };
-        public const int RefreshRate = 120;
+        public const int RefreshRate = 60;
         public const float diagonalMove = 0.707107f;
         public const int MapSize = 21;
         public const int CellSize = 32;

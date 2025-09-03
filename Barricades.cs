@@ -77,8 +77,7 @@ namespace The_Rustwood_Outlaw
                 {
                     // Randomly choose the slime coor (green or red)
                     bool green = random.Next(2) == 0;
-                    string color = "";
-                    if (green) color = "Green slime";
+                    EnemyType enemyType = green ? EnemyType.GreenSlime : EnemyType.RedSlime;
 
 
                     var slime = new Enemy(
@@ -87,7 +86,7 @@ namespace The_Rustwood_Outlaw
                         GameSettings.EnemyDamage,
                         position,
                         board,
-                        color
+                        enemyType
                     );
                     board.entities.Add(slime);
                 }

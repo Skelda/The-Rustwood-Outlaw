@@ -244,10 +244,13 @@ namespace The_Rustwood_Outlaw
         private void Form1_KeyUp(object sender, KeyEventArgs e)
         {
             pressedKeys.Remove(e.KeyCode);
+            if (e.KeyCode == Keys.Space)
+            { }
         }
 
         private void bStartGame_Click(object sender, EventArgs e)
         {
+            if (!MainMenu.Visible && !pYouLost.Visible) return;
             paused = false;
             Startgame();
             MainMenu.Visible = false;

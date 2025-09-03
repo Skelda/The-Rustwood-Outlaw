@@ -14,6 +14,7 @@ namespace The_Rustwood_Outlaw
         [STAThread]
         static void Main()
         {
+            EnemySpriteCache.Initialize();
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new Board());

@@ -46,10 +46,10 @@ namespace The_Rustwood_Outlaw
             this.lHealth = new System.Windows.Forms.Label();
             this.panelHearts = new System.Windows.Forms.Panel();
             this.pYouLost = new System.Windows.Forms.Panel();
+            this.lLostScreenScore = new System.Windows.Forms.Label();
             this.lLostScreenLevel = new System.Windows.Forms.Label();
             this.playAgain = new System.Windows.Forms.Button();
             this.label2 = new System.Windows.Forms.Label();
-            this.lLostScreenScore = new System.Windows.Forms.Label();
             this.MainMenu.SuspendLayout();
             this.Pause.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.Background)).BeginInit();
@@ -223,6 +223,18 @@ namespace The_Rustwood_Outlaw
             this.pYouLost.TabIndex = 5;
             this.pYouLost.Visible = false;
             // 
+            // lLostScreenScore
+            // 
+            this.lLostScreenScore.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(50)))), ((int)(((byte)(0)))));
+            this.lLostScreenScore.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
+            this.lLostScreenScore.ForeColor = System.Drawing.Color.MediumSpringGreen;
+            this.lLostScreenScore.Location = new System.Drawing.Point(124, 170);
+            this.lLostScreenScore.Name = "lLostScreenScore";
+            this.lLostScreenScore.Size = new System.Drawing.Size(117, 40);
+            this.lLostScreenScore.TabIndex = 4;
+            this.lLostScreenScore.Text = "Score:";
+            this.lLostScreenScore.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
             // lLostScreenLevel
             // 
             this.lLostScreenLevel.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(50)))), ((int)(((byte)(0)))));
@@ -257,18 +269,6 @@ namespace The_Rustwood_Outlaw
             this.label2.TabIndex = 0;
             this.label2.Text = "You lost";
             this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // lLostScreenScore
-            // 
-            this.lLostScreenScore.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(50)))), ((int)(((byte)(0)))));
-            this.lLostScreenScore.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
-            this.lLostScreenScore.ForeColor = System.Drawing.Color.MediumSpringGreen;
-            this.lLostScreenScore.Location = new System.Drawing.Point(124, 170);
-            this.lLostScreenScore.Name = "lLostScreenScore";
-            this.lLostScreenScore.Size = new System.Drawing.Size(117, 40);
-            this.lLostScreenScore.TabIndex = 4;
-            this.lLostScreenScore.Text = "Score:";
-            this.lLostScreenScore.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // Board
             // 
