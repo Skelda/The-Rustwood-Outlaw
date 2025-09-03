@@ -47,7 +47,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Barricades.cs" />
-    <Compile Include="bin\Debug\Item.cs" />
     <Compile Include="Entity.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
@@ -55,6 +54,7 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
+    <Compile Include="Item.cs" />
     <Compile Include="Level.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -95,8 +95,6 @@
     <None Include="Resources\fireRateBoost.png" />
     <None Include="Resources\multishot.png" />
     <None Include="Resources\spawn_area_pixel_art.png" />
-    <None Include="bin\Debug\levels.txt" />
-    <Content Include="levels.txt" />
     <None Include="Resources\background.png" />
   </ItemGroup>
   <ItemGroup />
