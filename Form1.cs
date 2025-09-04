@@ -142,8 +142,6 @@ namespace The_Rustwood_Outlaw
             DrawHearts();
             lScore.Text = $"Score: {score}";
             Background.SendToBack();
-            this.Invalidate(); // Mark as dirty
-            this.Update();     // Force immediate repaint
         }
 
         private void levelTimer(object sender, EventArgs e)
